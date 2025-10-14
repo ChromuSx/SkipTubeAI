@@ -485,71 +485,6 @@
     }
   }
 
-  /**
-   * TranscriptValidationError - Transcript validation errors
-   */
-  class TranscriptValidationError extends ValidationError {
-    constructor(message) {
-      super(message, 'transcript', null);
-    }
-
-    getUserMessage() {
-      return `Invalid transcript: ${this.message}`;
-    }
-  }
-
-  // transcript-error.js - Transcript extraction errors
-
-
-  /**
-   * TranscriptError - Transcript extraction errors
-   */
-  class TranscriptError extends BaseError {
-    constructor(message, videoId, method = null) {
-      super(message, 'TRANSCRIPT_ERROR', { videoId, method });
-      this.videoId = videoId;
-      this.method = method;
-    }
-
-    getUserMessage() {
-      return 'Unable to extract transcript from this video.';
-    }
-
-    getSeverity() {
-      return 'warning';
-    }
-  }
-
-  /**
-   * TranscriptNotAvailableError - Video has no transcript
-   */
-  class TranscriptNotAvailableError extends TranscriptError {
-    constructor(videoId) {
-      super('Transcript not available for this video', videoId);
-    }
-
-    getUserMessage() {
-      return 'This video does not have subtitles/transcript available. The extension only works with videos that have captions.';
-    }
-  }
-
-  /**
-   * TranscriptExtractionError - Failed to extract transcript
-   */
-  class TranscriptExtractionError extends TranscriptError {
-    constructor(message, videoId, method) {
-      super(message, videoId, method);
-    }
-
-    isRetryable() {
-      return true;
-    }
-
-    getUserMessage() {
-      return 'Failed to extract transcript. Retrying with different method...';
-    }
-  }
-
   // segment-validator.js - Segment validation logic
 
 
@@ -1059,358 +994,6 @@
     }
   }
 
-  // transcript-validator.js - Transcript validation logic
-
-
-  /**
-   * TranscriptValidator - Validates transcript data
-   */
-  class TranscriptValidator {
-    /**
-     * Validate complete transcript object
-     * @param {Object} transcript - Transcript to validate
-     * @throws {TranscriptValidationError}
-     */
-    static validate(transcript) {
-      if (!transcript || typeof transcript !== 'object') {
-        throw new TranscriptValidationError(
-          'Transcript must be an object',
-          'transcript',
-          transcript
-        );
-      }
-
-      if (!transcript.text || typeof transcript.text !== 'string') {
-        throw new TranscriptValidationError(
-          'Transcript must contain text',
-          'text',
-          transcript.text
-        );
-      }
-
-      if (transcript.text.trim().length === 0) {
-        throw new TranscriptValidationError(
-          'Transcript text cannot be empty',
-          'text',
-          transcript.text
-        );
-      }
-
-      // Validate segments if present
-      if (transcript.segments !== undefined) {
-        this.validateSegments(transcript.segments);
-      }
-
-      return true;
-    }
-
-    /**
-     * Validate transcript segments array
-     * @param {Array} segments - Transcript segments
-     * @throws {TranscriptValidationError}
-     */
-    static validateSegments(segments) {
-      if (!Array.isArray(segments)) {
-        throw new TranscriptValidationError(
-          'Segments must be an array',
-          'segments',
-          segments
-        );
-      }
-
-      if (segments.length === 0) {
-        throw new TranscriptValidationError(
-          'Segments array cannot be empty',
-          'segments',
-          segments
-        );
-      }
-
-      segments.forEach((segment, index) => {
-        this.validateSegment(segment, index);
-      });
-
-      return true;
-    }
-
-    /**
-     * Validate individual transcript segment
-     * @param {Object} segment - Segment to validate
-     * @param {number} index - Segment index
-     * @throws {TranscriptValidationError}
-     */
-    static validateSegment(segment, index) {
-      if (!segment || typeof segment !== 'object') {
-        throw new TranscriptValidationError(
-          `Segment at index ${index} must be an object`,
-          `segments[${index}]`,
-          segment
-        );
-      }
-
-      // Validate time
-      if (segment.time !== undefined) {
-        if (typeof segment.time !== 'number') {
-          throw new TranscriptValidationError(
-            `Segment at index ${index}: time must be a number`,
-            `segments[${index}].time`,
-            segment.time
-          );
-        }
-
-        if (segment.time < 0) {
-          throw new TranscriptValidationError(
-            `Segment at index ${index}: time must be non-negative`,
-            `segments[${index}].time`,
-            segment.time
-          );
-        }
-      }
-
-      // Validate text
-      if (segment.text !== undefined) {
-        if (typeof segment.text !== 'string') {
-          throw new TranscriptValidationError(
-            `Segment at index ${index}: text must be a string`,
-            `segments[${index}].text`,
-            segment.text
-          );
-        }
-      }
-
-      return true;
-    }
-
-    /**
-     * Validate transcript text format
-     * @param {string} text - Transcript text
-     * @throws {TranscriptValidationError}
-     */
-    static validateText(text) {
-      if (typeof text !== 'string') {
-        throw new TranscriptValidationError(
-          'Transcript text must be a string',
-          'text',
-          text
-        );
-      }
-
-      if (text.trim().length === 0) {
-        throw new TranscriptValidationError(
-          'Transcript text cannot be empty',
-          'text',
-          text
-        );
-      }
-
-      // Check minimum length (at least 10 characters)
-      if (text.length < 10) {
-        throw new TranscriptValidationError(
-          'Transcript text too short (minimum 10 characters)',
-          'text',
-          text
-        );
-      }
-
-      return true;
-    }
-
-    /**
-     * Validate video ID
-     * @param {string} videoId - YouTube video ID
-     * @throws {TranscriptValidationError}
-     */
-    static validateVideoId(videoId) {
-      if (typeof videoId !== 'string') {
-        throw new TranscriptValidationError(
-          'Video ID must be a string',
-          'videoId',
-          videoId
-        );
-      }
-
-      if (videoId.trim().length === 0) {
-        throw new TranscriptValidationError(
-          'Video ID cannot be empty',
-          'videoId',
-          videoId
-        );
-      }
-
-      // YouTube video IDs are typically 11 characters
-      if (videoId.length !== 11) {
-        throw new TranscriptValidationError(
-          'Video ID must be 11 characters',
-          'videoId',
-          videoId
-        );
-      }
-
-      // Valid characters: alphanumeric, hyphen, underscore
-      const validPattern = /^[a-zA-Z0-9_-]+$/;
-      if (!validPattern.test(videoId)) {
-        throw new TranscriptValidationError(
-          'Video ID contains invalid characters',
-          'videoId',
-          videoId
-        );
-      }
-
-      return true;
-    }
-
-    /**
-     * Validate channel ID
-     * @param {string} channelId - YouTube channel ID
-     * @throws {TranscriptValidationError}
-     */
-    static validateChannelId(channelId) {
-      if (typeof channelId !== 'string') {
-        throw new TranscriptValidationError(
-          'Channel ID must be a string',
-          'channelId',
-          channelId
-        );
-      }
-
-      if (channelId.trim().length === 0) {
-        throw new TranscriptValidationError(
-          'Channel ID cannot be empty',
-          'channelId',
-          channelId
-        );
-      }
-
-      // Channel IDs can be handles (@username) or UC IDs (UCxxxxxxxxxx)
-      const isHandle = channelId.startsWith('@');
-      const isUCId = channelId.startsWith('UC') && channelId.length === 24;
-
-      if (!isHandle && !isUCId) {
-        throw new TranscriptValidationError(
-          'Channel ID must be a handle (@username) or UC ID (UC...)',
-          'channelId',
-          channelId
-        );
-      }
-
-      return true;
-    }
-
-    /**
-     * Sanitize transcript (normalize text, remove invalid segments)
-     * @param {Object} transcript - Transcript to sanitize
-     * @returns {Object} - Sanitized transcript
-     */
-    static sanitize(transcript) {
-      if (!transcript || typeof transcript !== 'object') {
-        return { text: '', segments: [] };
-      }
-
-      const sanitized = {
-        text: (transcript.text || '').trim(),
-        videoId: transcript.videoId || '',
-        channelId: transcript.channelId || ''
-      };
-
-      // Sanitize segments if present
-      if (Array.isArray(transcript.segments)) {
-        sanitized.segments = transcript.segments
-          .filter(segment => {
-            return segment &&
-                   typeof segment === 'object' &&
-                   (segment.time === undefined || typeof segment.time === 'number') &&
-                   (segment.text === undefined || typeof segment.text === 'string');
-          })
-          .map(segment => ({
-            time: Math.max(0, segment.time || 0),
-            text: (segment.text || '').trim()
-          }));
-      }
-
-      return sanitized;
-    }
-
-    /**
-     * Validate safe - returns null on failure
-     * @param {Object} transcript - Transcript to validate
-     * @returns {boolean|null}
-     */
-    static validateSafe(transcript) {
-      try {
-        this.validate(transcript);
-        return true;
-      } catch (error) {
-        return null;
-      }
-    }
-
-    /**
-     * Check if transcript has sufficient content for analysis
-     * @param {Object} transcript - Transcript to check
-     * @param {number} minLength - Minimum text length
-     * @returns {boolean}
-     */
-    static hasSufficientContent(transcript, minLength = 100) {
-      if (!transcript || !transcript.text) {
-        return false;
-      }
-
-      return transcript.text.trim().length >= minLength;
-    }
-
-    /**
-     * Validate transcript format (DOM vs API)
-     * @param {Array} transcriptArray - Array of transcript entries
-     * @throws {TranscriptValidationError}
-     */
-    static validateFormat(transcriptArray) {
-      if (!Array.isArray(transcriptArray)) {
-        throw new TranscriptValidationError(
-          'Transcript must be an array',
-          'transcript',
-          transcriptArray
-        );
-      }
-
-      if (transcriptArray.length === 0) {
-        throw new TranscriptValidationError(
-          'Transcript array cannot be empty',
-          'transcript',
-          transcriptArray
-        );
-      }
-
-      // Each entry should have time and text
-      transcriptArray.forEach((entry, index) => {
-        if (!entry || typeof entry !== 'object') {
-          throw new TranscriptValidationError(
-            `Entry at index ${index} must be an object`,
-            `transcript[${index}]`,
-            entry
-          );
-        }
-
-        if (typeof entry.time !== 'number') {
-          throw new TranscriptValidationError(
-            `Entry at index ${index} must have numeric time`,
-            `transcript[${index}].time`,
-            entry.time
-          );
-        }
-
-        if (typeof entry.text !== 'string') {
-          throw new TranscriptValidationError(
-            `Entry at index ${index} must have string text`,
-            `transcript[${index}].text`,
-            entry.text
-          );
-        }
-      });
-
-      return true;
-    }
-  }
-
   // segment.js - Segment domain model
 
 
@@ -1647,246 +1230,6 @@
         groups[category].push(segment);
         return groups;
       }, {});
-    }
-  }
-
-  // transcript.js - Transcript domain model
-
-
-  /**
-   * Transcript - Represents a video transcript
-   */
-  class Transcript {
-    /**
-     * @param {string} text - Full transcript text
-     * @param {string} videoId - YouTube video ID
-     * @param {string} channelId - YouTube channel ID
-     * @param {Array} segments - Optional transcript segments
-     */
-    constructor(text, videoId, channelId = '', segments = []) {
-      // Validate on construction
-      TranscriptValidator.validate({ text, segments });
-      TranscriptValidator.validateVideoId(videoId);
-
-      this.text = text.trim();
-      this.videoId = videoId;
-      this.channelId = channelId;
-      this.segments = segments;
-      this.extractedAt = new Date().toISOString();
-    }
-
-    /**
-     * Get transcript word count
-     * @returns {number}
-     */
-    getWordCount() {
-      return this.text.split(/\s+/).filter(word => word.length > 0).length;
-    }
-
-    /**
-     * Get transcript character count
-     * @returns {number}
-     */
-    getCharCount() {
-      return this.text.length;
-    }
-
-    /**
-     * Get estimated reading time in minutes
-     * @param {number} wordsPerMinute - Reading speed (default 200)
-     * @returns {number}
-     */
-    getEstimatedReadingTime(wordsPerMinute = 200) {
-      return Math.ceil(this.getWordCount() / wordsPerMinute);
-    }
-
-    /**
-     * Check if transcript has sufficient content for analysis
-     * @param {number} minWords - Minimum word count
-     * @returns {boolean}
-     */
-    hasSufficientContent(minWords = 50) {
-      return this.getWordCount() >= minWords;
-    }
-
-    /**
-     * Get transcript excerpt
-     * @param {number} maxLength - Maximum length
-     * @returns {string}
-     */
-    getExcerpt(maxLength = 200) {
-      if (this.text.length <= maxLength) {
-        return this.text;
-      }
-      return this.text.substring(0, maxLength) + '...';
-    }
-
-    /**
-     * Get segment at specific time
-     * @param {number} time - Time in seconds
-     * @returns {Object|null}
-     */
-    getSegmentAtTime(time) {
-      return this.segments.find(segment => {
-        return time >= segment.time &&
-               (segment.end === undefined || time < segment.end);
-      }) || null;
-    }
-
-    /**
-     * Get segments in time range
-     * @param {number} start - Start time
-     * @param {number} end - End time
-     * @returns {Array}
-     */
-    getSegmentsInRange(start, end) {
-      return this.segments.filter(segment => {
-        return segment.time >= start && segment.time < end;
-      });
-    }
-
-    /**
-     * Format for AI analysis
-     * @returns {string}
-     */
-    formatForAI() {
-      if (this.segments.length > 0) {
-        // Format with timestamps if we have segments
-        return this.segments
-          .map(segment => `[${Math.floor(segment.time)}s] ${segment.text}`)
-          .join('\n');
-      }
-      return this.text;
-    }
-
-    /**
-     * Get metadata
-     * @returns {Object}
-     */
-    getMetadata() {
-      return {
-        videoId: this.videoId,
-        channelId: this.channelId,
-        wordCount: this.getWordCount(),
-        charCount: this.getCharCount(),
-        segmentCount: this.segments.length,
-        extractedAt: this.extractedAt,
-        hasSufficientContent: this.hasSufficientContent()
-      };
-    }
-
-    /**
-     * Convert to plain object
-     * @returns {Object}
-     */
-    toJSON() {
-      return {
-        text: this.text,
-        videoId: this.videoId,
-        channelId: this.channelId,
-        segments: this.segments,
-        extractedAt: this.extractedAt,
-        metadata: this.getMetadata()
-      };
-    }
-
-    /**
-     * Create from plain object
-     * @param {Object} data - Plain object data
-     * @returns {Transcript}
-     */
-    static fromJSON(data) {
-      const transcript = new Transcript(
-        data.text,
-        data.videoId,
-        data.channelId || '',
-        data.segments || []
-      );
-
-      if (data.extractedAt) {
-        transcript.extractedAt = data.extractedAt;
-      }
-
-      return transcript;
-    }
-
-    /**
-     * Create from DOM extraction
-     * @param {Array} domSegments - Segments extracted from DOM
-     * @param {string} videoId - Video ID
-     * @param {string} channelId - Channel ID
-     * @returns {Transcript}
-     */
-    static fromDOM(domSegments, videoId, channelId = '') {
-      // Combine all text
-      const text = domSegments.map(s => s.text).join(' ');
-
-      // Create transcript with segments
-      return new Transcript(text, videoId, channelId, domSegments);
-    }
-
-    /**
-     * Create from API response
-     * @param {Object} apiData - API response data
-     * @param {string} videoId - Video ID
-     * @param {string} channelId - Channel ID
-     * @returns {Transcript}
-     */
-    static fromAPI(apiData, videoId, channelId = '') {
-      // Parse API format (could be various formats)
-      const segments = apiData.events || apiData.segments || [];
-      const text = segments.map(s => s.segs?.[0]?.utf8 || s.text || '').join(' ');
-
-      return new Transcript(text, videoId, channelId, segments);
-    }
-
-    /**
-     * Merge multiple transcripts
-     * @param {Array<Transcript>} transcripts - Transcripts to merge
-     * @returns {Transcript}
-     */
-    static merge(transcripts) {
-      if (transcripts.length === 0) {
-        throw new Error('Cannot merge empty transcripts array');
-      }
-
-      const first = transcripts[0];
-      const allText = transcripts.map(t => t.text).join(' ');
-      const allSegments = transcripts.flatMap(t => t.segments);
-
-      return new Transcript(
-        allText,
-        first.videoId,
-        first.channelId,
-        allSegments
-      );
-    }
-
-    /**
-     * Search for text in transcript
-     * @param {string} query - Search query
-     * @param {boolean} caseSensitive - Case sensitive search
-     * @returns {Array} - Matches with positions
-     */
-    search(query, caseSensitive = false) {
-      const text = caseSensitive ? this.text : this.text.toLowerCase();
-      const searchQuery = caseSensitive ? query : query.toLowerCase();
-      const matches = [];
-      let position = 0;
-
-      while ((position = text.indexOf(searchQuery, position)) !== -1) {
-        matches.push({
-          position,
-          text: this.text.substring(position, position + query.length),
-          context: this.text.substring(
-            Math.max(0, position - 50),
-            Math.min(this.text.length, position + query.length + 50)
-          )
-        });
-        position += query.length;
-      }
-
-      return matches;
     }
   }
 
@@ -2444,366 +1787,6 @@
         sourceCount: results.length,
         models: results.map(r => r.metadata.model)
       });
-    }
-  }
-
-  // index.js - Models module exports
-
-  var index = /*#__PURE__*/Object.freeze({
-    __proto__: null,
-    AdvancedSettings: AdvancedSettings,
-    AnalysisResult: AnalysisResult,
-    Segment: Segment,
-    Settings: Settings,
-    Transcript: Transcript
-  });
-
-  // transcript-service.js - Transcript extraction and management service
-
-
-  /**
-   * TranscriptService - Handles transcript extraction and processing
-   */
-  class TranscriptService {
-    constructor() {
-      this.logger = logger.child('TranscriptService');
-      this.maxRetries = 10;
-      this.retryDelay = 800;
-    }
-
-    /**
-     * Extract transcript from DOM
-     * @param {string} videoId - Video ID
-     * @param {string} channelId - Channel ID
-     * @returns {Promise<Transcript>}
-     */
-    async extractFromDOM(videoId, channelId = '') {
-      const stopTimer = this.logger.time(`Extract transcript for ${videoId}`);
-
-      try {
-        this.logger.info(`Extracting transcript from DOM`, { videoId });
-
-        // Try to open transcript panel
-        const opened = await this.openTranscriptPanel();
-        if (!opened) {
-          this.logger.warn(`Could not open transcript panel`, { videoId });
-        }
-
-        // Wait for transcript to load
-        const transcriptData = await this.waitForTranscript();
-
-        if (!transcriptData || transcriptData.length === 0) {
-          throw new TranscriptNotAvailableError(videoId);
-        }
-
-        // Create transcript model
-        const transcript = Transcript.fromDOM(transcriptData, videoId, channelId);
-
-        // Validate
-        TranscriptValidator.validate(transcript);
-
-        stopTimer();
-
-        this.logger.info(`Transcript extracted successfully`, {
-          videoId,
-          wordCount: transcript.getWordCount(),
-          segmentCount: transcript.segments.length
-        });
-
-        return transcript;
-      } catch (error) {
-        stopTimer();
-        this.logger.error(`Transcript extraction failed`, {
-          videoId,
-          error: error.message
-        });
-        throw error;
-      }
-    }
-
-    /**
-     * Open transcript panel
-     * @returns {Promise<boolean>}
-     */
-    async openTranscriptPanel() {
-      try {
-        // Look for transcript button (multi-language support)
-        const transcriptButton = Array.from(document.querySelectorAll('button'))
-          .find(btn => {
-            const text = btn.textContent?.toLowerCase() || '';
-            return text.includes('transcript') || text.includes('trascrizione');
-          });
-
-        if (!transcriptButton) {
-          this.logger.debug(`Transcript button not found`);
-          return false;
-        }
-
-        // Check if already open
-        const panel = document.querySelector('ytd-engagement-panel-section-list-renderer[target-id*="transcript"]');
-        if (panel && panel.offsetParent !== null) {
-          this.logger.debug(`Transcript panel already open`);
-          return true;
-        }
-
-        // Click button
-        transcriptButton.click();
-        this.logger.debug(`Clicked transcript button`);
-
-        // Wait for panel to appear
-        await this.delay(500);
-
-        return true;
-      } catch (error) {
-        this.logger.warn(`Failed to open transcript panel`, { error: error.message });
-        return false;
-      }
-    }
-
-    /**
-     * Wait for transcript to load in DOM
-     * @returns {Promise<Array>}
-     */
-    async waitForTranscript() {
-      for (let i = 0; i < this.maxRetries; i++) {
-        this.logger.debug(`Checking for transcript (attempt ${i + 1}/${this.maxRetries})`);
-
-        const transcriptData = this.extractTranscriptData();
-
-        if (transcriptData && transcriptData.length > 0) {
-          this.logger.debug(`Transcript found with ${transcriptData.length} segments`);
-          return transcriptData;
-        }
-
-        // Wait before retry
-        await this.delay(this.retryDelay);
-      }
-
-      throw new TranscriptExtractionError('Transcript not found after retries');
-    }
-
-    /**
-     * Extract transcript data from DOM
-     * @returns {Array|null}
-     */
-    extractTranscriptData() {
-      try {
-        const panel = document.querySelector('ytd-engagement-panel-section-list-renderer[target-id*="transcript"]');
-
-        if (!panel) {
-          return null;
-        }
-
-        const segments = panel.querySelectorAll('ytd-transcript-segment-renderer');
-
-        if (!segments || segments.length === 0) {
-          return null;
-        }
-
-        const transcriptData = Array.from(segments).map(segment => {
-          const timeElement = segment.querySelector('.segment-timestamp');
-          const textElement = segment.querySelector('.segment-text');
-
-          if (!timeElement || !textElement) {
-            return null;
-          }
-
-          // Parse time (format: "0:00" or "1:23:45")
-          const timeText = timeElement.textContent.trim();
-          const timeParts = timeText.split(':').map(p => parseInt(p, 10));
-
-          let timeSeconds;
-          if (timeParts.length === 2) {
-            // MM:SS
-            timeSeconds = timeParts[0] * 60 + timeParts[1];
-          } else if (timeParts.length === 3) {
-            // HH:MM:SS
-            timeSeconds = timeParts[0] * 3600 + timeParts[1] * 60 + timeParts[2];
-          } else {
-            return null;
-          }
-
-          return {
-            time: timeSeconds,
-            text: textElement.textContent.trim()
-          };
-        }).filter(item => item !== null);
-
-        return transcriptData.length > 0 ? transcriptData : null;
-      } catch (error) {
-        this.logger.warn(`Error extracting transcript data`, { error: error.message });
-        return null;
-      }
-    }
-
-    /**
-     * Extract from player config (fallback method)
-     * @param {string} videoId - Video ID
-     * @returns {Promise<Transcript|null>}
-     */
-    async extractFromPlayerConfig(videoId) {
-      try {
-        this.logger.debug(`Trying player config extraction`, { videoId });
-
-        // Access ytInitialPlayerResponse
-        if (typeof window.ytInitialPlayerResponse === 'undefined') {
-          this.logger.debug(`ytInitialPlayerResponse not available`);
-          return null;
-        }
-
-        const captions = window.ytInitialPlayerResponse?.captions;
-        if (!captions) {
-          this.logger.debug(`No captions in player config`);
-          return null;
-        }
-
-        const captionTracks = captions.playerCaptionsTracklistRenderer?.captionTracks;
-        if (!captionTracks || captionTracks.length === 0) {
-          this.logger.debug(`No caption tracks found`);
-          return null;
-        }
-
-        // Find English track or first available
-        const track = captionTracks.find(t => t.languageCode === 'en') || captionTracks[0];
-
-        this.logger.info(`Found caption track`, {
-          videoId,
-          language: track.languageCode
-        });
-
-        // Note: Cannot fetch due to CORS, but we know transcript exists
-        return null;
-      } catch (error) {
-        this.logger.warn(`Player config extraction failed`, { error: error.message });
-        return null;
-      }
-    }
-
-    /**
-     * Check if transcript is available
-     * @returns {Promise<boolean>}
-     */
-    async isTranscriptAvailable() {
-      try {
-        // Try to open panel
-        await this.openTranscriptPanel();
-
-        // Check for segments
-        await this.delay(1000);
-        const data = this.extractTranscriptData();
-
-        return data !== null && data.length > 0;
-      } catch (error) {
-        return false;
-      }
-    }
-
-    /**
-     * Format transcript for display
-     * @param {Transcript} transcript - Transcript to format
-     * @param {number} maxLength - Maximum length
-     * @returns {string}
-     */
-    formatForDisplay(transcript, maxLength = 500) {
-      const excerpt = transcript.getExcerpt(maxLength);
-      const metadata = transcript.getMetadata();
-
-      return `Transcript (${metadata.wordCount} words):\n${excerpt}`;
-    }
-
-    /**
-     * Search transcript
-     * @param {Transcript} transcript - Transcript to search
-     * @param {string} query - Search query
-     * @param {boolean} caseSensitive - Case sensitive
-     * @returns {Array}
-     */
-    searchTranscript(transcript, query, caseSensitive = false) {
-      const results = transcript.search(query, caseSensitive);
-
-      this.logger.debug(`Transcript search`, {
-        query,
-        resultsCount: results.length
-      });
-
-      return results;
-    }
-
-    /**
-     * Get segment at time
-     * @param {Transcript} transcript - Transcript
-     * @param {number} time - Time in seconds
-     * @returns {Object|null}
-     */
-    getSegmentAtTime(transcript, time) {
-      return transcript.getSegmentAtTime(time);
-    }
-
-    /**
-     * Validate transcript quality
-     * @param {Transcript} transcript - Transcript to validate
-     * @returns {Object}
-     */
-    validateQuality(transcript) {
-      const metadata = transcript.getMetadata();
-
-      const quality = {
-        isValid: true,
-        hasSufficientContent: metadata.hasSufficientContent,
-        wordCount: metadata.wordCount,
-        charCount: metadata.charCount,
-        segmentCount: metadata.segmentCount,
-        issues: []
-      };
-
-      // Check word count
-      if (metadata.wordCount < 50) {
-        quality.isValid = false;
-        quality.issues.push('Transcript too short (less than 50 words)');
-      }
-
-      // Check segment count
-      if (metadata.segmentCount === 0 && transcript.text.length > 0) {
-        quality.issues.push('No segments available (may affect timestamp accuracy)');
-      }
-
-      // Check for empty text
-      if (metadata.charCount === 0) {
-        quality.isValid = false;
-        quality.issues.push('Transcript is empty');
-      }
-
-      return quality;
-    }
-
-    /**
-     * Delay helper
-     * @param {number} ms - Milliseconds
-     * @returns {Promise}
-     */
-    delay(ms) {
-      return new Promise(resolve => setTimeout(resolve, ms));
-    }
-
-    /**
-     * Clean transcript text (remove special characters, normalize whitespace)
-     * @param {string} text - Text to clean
-     * @returns {string}
-     */
-    static cleanText(text) {
-      return text
-        .replace(/\s+/g, ' ')
-        .replace(/[^\w\s.,!?-]/g, '')
-        .trim();
-    }
-
-    /**
-     * Merge transcript segments
-     * @param {Array} segments - Segments to merge
-     * @returns {string}
-     */
-    static mergeSegments(segments) {
-      return segments.map(s => s.text).join(' ');
     }
   }
 
@@ -4394,47 +3377,51 @@
     }
   }
 
-  // content-main.js - Refactored content script using new infrastructure
+  // popup-main.js - Refactored popup script using new infrastructure
 
 
   /**
-   * YouTubeSkipManager - Main content script manager
+   * PopupManager - Manages popup UI and interactions
    */
-  class YouTubeSkipManager {
+  class PopupManager {
     constructor() {
-      this.video = null;
-      this.skipSegments = [];
       this.currentVideoId = null;
-      this.isAnalyzing = false;
+      this.isLoadingSettings = true;
 
       // Services
-      this.logger = logger.child('YouTubeSkipManager');
-      this.transcriptService = new TranscriptService();
+      this.logger = logger.child('PopupManager');
       this.storageService = new StorageService();
       this.analyticsService = new AnalyticsService();
-
-      // Settings (will be loaded from storage)
-      this.settings = null;
-      this.advancedSettings = null;
 
       this.init();
     }
 
     /**
-     * Initialize manager
+     * Initialize popup
      */
     async init() {
       try {
-        this.logger.info('Initializing YouTube Skip Manager');
+        this.logger.info('Initializing popup');
 
-        // Load settings
-        await this.loadSettings();
+        // Load all data
+        await Promise.all([
+          this.loadSettings(),
+          this.loadStats(),
+          this.loadCacheInfo(),
+          this.loadCurrentVideoInfo(),
+          this.loadDarkMode()
+        ]);
 
-        // Setup observers
-        this.observeVideoChanges();
-        this.setupMessageListener();
+        // Setup event listeners
+        this.setupEventListeners();
 
-        this.logger.info('YouTube Skip Manager initialized successfully');
+        // Unlock saves after loading
+        setTimeout(() => {
+          this.isLoadingSettings = false;
+          this.logger.debug('Loading completed - events enabled');
+        }, 100);
+
+        this.logger.info('Popup initialized successfully');
       } catch (error) {
         this.logger.error('Initialization failed', { error: error.message });
       }
@@ -4446,694 +3433,625 @@
     async loadSettings() {
       try {
         const allSettings = await this.storageService.getAllSettings();
-        this.settings = allSettings.settings;
-        this.advancedSettings = allSettings.advancedSettings;
+        const { settings, advancedSettings } = allSettings;
+
+        // Update UI - Basic settings
+        document.getElementById('skip-sponsors').checked = settings.skipSponsors;
+        document.getElementById('skip-intros').checked = settings.skipIntros;
+        document.getElementById('skip-outros').checked = settings.skipOutros;
+        document.getElementById('skip-donations').checked = settings.skipDonations;
+        document.getElementById('skip-selfpromo').checked = settings.skipSelfPromo;
+        document.getElementById('master-toggle').checked = settings.autoSkip;
+
+        this.updateStatus(settings.autoSkip);
+
+        // Update UI - Advanced settings
+        this.loadAdvancedSettingsUI(advancedSettings);
 
         this.logger.debug('Settings loaded', {
-          autoSkip: this.settings.autoSkip,
-          enabledCategories: this.settings.getEnabledCategories()
+          autoSkip: settings.autoSkip,
+          enabled: settings.getEnabledCategories()
         });
       } catch (error) {
         this.logger.error('Failed to load settings', { error: error.message });
-        // Use defaults if loading fails
-        const { Settings, AdvancedSettings } = await Promise.resolve().then(function () { return index; });
-        this.settings = Settings.createDefault();
-        this.advancedSettings = AdvancedSettings.createDefault();
       }
     }
 
     /**
-     * Observe DOM changes to detect video changes
+     * Load advanced settings UI
+     * @param {AdvancedSettings} advancedSettings - Advanced settings
      */
-    observeVideoChanges() {
-      const observer = new MutationObserver(() => {
-        const video = document.querySelector('video');
-        const videoId = this.extractVideoId();
+    loadAdvancedSettingsUI(advancedSettings) {
+      // Confidence threshold
+      const confidenceSlider = document.getElementById('confidence-slider');
+      const confidenceValue = document.getElementById('confidence-value');
+      confidenceSlider.value = advancedSettings.confidenceThreshold * 100;
+      confidenceValue.textContent = advancedSettings.confidenceThreshold.toFixed(2);
 
-        if (video && videoId && videoId !== this.currentVideoId) {
-          this.handleNewVideo(video, videoId);
+      // AI Model
+      const aiModelSelect = document.getElementById('ai-model');
+      aiModelSelect.value = advancedSettings.aiModel;
+
+      // Skip buffer
+      const bufferSlider = document.getElementById('buffer-slider');
+      const bufferValue = document.getElementById('buffer-value');
+      bufferSlider.value = advancedSettings.skipBuffer * 10;
+      bufferValue.textContent = advancedSettings.skipBuffer.toFixed(1) + 's';
+
+      // Whitelist count
+      const whitelistCount = advancedSettings.getWhitelistCount();
+      document.getElementById('whitelist-count').textContent =
+        whitelistCount === 0 ? '0 excluded channels' :
+        whitelistCount === 1 ? '1 excluded channel' :
+        `${whitelistCount} excluded channels`;
+
+      this.logger.debug('Advanced settings UI updated', {
+        model: advancedSettings.aiModel,
+        threshold: advancedSettings.confidenceThreshold
+      });
+    }
+
+    /**
+     * Load statistics
+     */
+    async loadStats() {
+      try {
+        const summary = await this.analyticsService.getLifetimeStats();
+
+        if (summary) {
+          document.getElementById('time-saved').textContent = summary.formattedTimeSaved;
+          document.getElementById('segments-skipped').textContent = summary.totalSkips;
+
+          this.logger.debug('Stats loaded', {
+            totalSkips: summary.totalSkips,
+            timeSaved: summary.formattedTimeSaved
+          });
         }
-      });
-
-      observer.observe(document.body, {
-        childList: true,
-        subtree: true
-      });
-
-      // Initial check
-      const video = document.querySelector('video');
-      const videoId = this.extractVideoId();
-      if (video && videoId) {
-        this.handleNewVideo(video, videoId);
-      }
-
-      this.logger.debug('Video change observer configured');
-    }
-
-    /**
-     * Extract video ID from URL
-     * @returns {string|null}
-     */
-    extractVideoId() {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get('v');
-    }
-
-    /**
-     * Extract channel ID from page
-     * @returns {string}
-     */
-    extractChannelId() {
-      try {
-        const channelLinkElement = document.querySelector('ytd-channel-name a');
-        if (!channelLinkElement) return '';
-
-        const channelUrl = channelLinkElement.href;
-        return channelUrl?.split('/').pop() || '';
       } catch (error) {
-        this.logger.warn('Failed to extract channel ID', { error: error.message });
-        return '';
+        this.logger.error('Failed to load stats', { error: error.message });
       }
     }
 
     /**
-     * Handle new video detection
-     * @param {HTMLVideoElement} video - Video element
-     * @param {string} videoId - Video ID
+     * Load cache info
      */
-    async handleNewVideo(video, videoId) {
+    async loadCacheInfo() {
       try {
-        this.logger.info('New video detected', { videoId });
+        const stats = await this.storageService.getCacheStatistics();
 
-        this.video = video;
-        this.currentVideoId = videoId;
-        this.skipSegments = [];
+        document.getElementById('cache-size').textContent = stats.totalEntries;
+        document.getElementById('videos-analyzed').textContent = stats.totalEntries;
 
-        // Track video view
-        const channelId = this.extractChannelId();
-        await this.analyticsService.trackVideoView(videoId, channelId);
+        this.logger.debug('Cache info loaded', {
+          entries: stats.totalEntries,
+          segments: stats.totalSegments
+        });
+      } catch (error) {
+        this.logger.error('Failed to load cache info', { error: error.message });
+      }
+    }
 
-        // Check if channel is whitelisted
-        if (await this.isChannelWhitelisted()) {
-          this.logger.info('Channel whitelisted, skipping analysis', { videoId });
-          this.showNotification('ℹ️ Channel excluded by advanced settings', 'info');
+    /**
+     * Load current video info
+     */
+    async loadCurrentVideoInfo() {
+      try {
+        const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+        const tab = tabs[0];
+
+        if (!tab || !tab.url || !tab.url.includes('youtube.com/watch')) {
           return;
         }
 
-        // Check cache
-        const cachedResult = await this.storageService.getCachedAnalysis(videoId);
-        if (cachedResult) {
-          this.logger.info('Cache hit', {
-            videoId,
-            segments: cachedResult.getSegmentCount()
-          });
+        const url = new URL(tab.url);
+        this.currentVideoId = url.searchParams.get('v');
 
-          // Convert to Segment models
-          this.skipSegments = cachedResult.segments;
+        if (this.currentVideoId) {
+          const result = await this.storageService.getCachedAnalysis(this.currentVideoId);
 
-          this.setupVideoMonitoring();
-          this.displaySegments();
-          this.showNotification(
-            `✅ ${cachedResult.getSegmentCount()} segments loaded from cache`,
-            'success'
-          );
-          return;
-        }
+          if (result && result.segments.length > 0) {
+            document.getElementById('current-video-section').style.display = 'block';
+            document.getElementById('current-video-title').textContent =
+              tab.title.replace(' - YouTube', '');
 
-        // Wait for page to load
-        await this.delay(2000);
+            const categories = result.segments.map(s => s.category).join(', ');
+            document.getElementById('current-video-segments').textContent =
+              `${result.segments.length} segments detected: ${categories}`;
 
-        // Try to open transcript panel
-        await this.transcriptService.openTranscriptPanel();
-
-        // Start analysis
-        this.analyzeVideo(videoId);
-        this.setupVideoMonitoring();
-
-      } catch (error) {
-        this.logger.error('Failed to handle new video', {
-          videoId,
-          error: error.message
-        });
-      }
-    }
-
-    /**
-     * Check if current channel is whitelisted
-     * @returns {Promise<boolean>}
-     */
-    async isChannelWhitelisted() {
-      try {
-        const channelId = this.extractChannelId();
-        if (!channelId) return false;
-
-        return await this.storageService.isChannelWhitelisted(channelId);
-      } catch (error) {
-        this.logger.error('Failed to check whitelist', { error: error.message });
-        return false;
-      }
-    }
-
-    /**
-     * Setup video monitoring for skip detection
-     */
-    setupVideoMonitoring() {
-      if (!this.video) {
-        this.logger.warn('Cannot setup monitoring: video element not found');
-        return;
-      }
-
-      // Merge overlapping segments
-      if (this.skipSegments.length > 0) {
-        const mergedSegments = Segment.mergeOverlapping(this.skipSegments);
-        this.skipSegments = mergedSegments;
-
-        this.logger.debug('Segments merged', {
-          original: this.skipSegments.length,
-          merged: mergedSegments.length
-        });
-      }
-
-      this.logger.info('Video monitoring setup', {
-        segments: this.skipSegments.length,
-        autoSkip: this.settings.autoSkip
-      });
-
-      // Remove previous listener
-      this.video.removeEventListener('timeupdate', this.handleTimeUpdate);
-
-      // Add new listener
-      this.handleTimeUpdate = this.handleTimeUpdate.bind(this);
-      this.video.addEventListener('timeupdate', this.handleTimeUpdate);
-    }
-
-    /**
-     * Handle video time update
-     */
-    handleTimeUpdate() {
-      if (!this.settings.autoSkip || !this.video || this.skipSegments.length === 0) {
-        return;
-      }
-
-      const currentTime = this.video.currentTime;
-
-      // Check if we're in a segment to skip
-      for (const segment of this.skipSegments) {
-        if (segment.contains(currentTime, this.settings.skipBuffer)) {
-          this.logger.debug('Segment detected', {
-            currentTime,
-            segment: segment.category,
-            range: segment.getTimeRange()
-          });
-
-          // Show preview if enabled
-          if (this.settings.enablePreview) {
-            this.showSkipPreview(segment);
+            this.logger.debug('Current video info loaded', {
+              videoId: this.currentVideoId,
+              segments: result.segments.length
+            });
           }
-
-          // Perform skip
-          this.performSkip(segment);
-          break;
         }
+      } catch (error) {
+        this.logger.error('Failed to load current video info', { error: error.message });
       }
     }
 
     /**
-     * Perform skip action
-     * @param {Segment} segment - Segment to skip
+     * Load dark mode preference
      */
-    async performSkip(segment) {
-      if (!this.video) return;
+    async loadDarkMode() {
+      try {
+        const data = await chrome.storage.local.get(['darkMode']);
+        if (data.darkMode) {
+          document.body.classList.add('dark-mode');
+          this.updateDarkModeIcon(true);
+        }
+      } catch (error) {
+        this.logger.error('Failed to load dark mode', { error: error.message });
+      }
+    }
 
-      this.logger.info('Performing skip', {
-        category: segment.category,
-        duration: segment.getDuration(),
-        range: segment.getTimeRange()
+    /**
+     * Setup event listeners
+     */
+    setupEventListeners() {
+      // Master toggle
+      document.getElementById('master-toggle').addEventListener('change', (e) => {
+        if (this.isLoadingSettings) return;
+        this.updateStatus(e.target.checked);
+        this.saveSettings();
       });
 
-      // Track skip
-      await this.analyticsService.trackSegmentSkip(segment, this.currentVideoId);
+      // Category checkboxes
+      ['skip-sponsors', 'skip-intros', 'skip-outros', 'skip-donations', 'skip-selfpromo']
+        .forEach(id => {
+          document.getElementById(id).addEventListener('change', () => {
+            if (this.isLoadingSettings) return;
+            this.saveSettings();
+          });
+        });
 
-      // Fade animation
-      this.video.style.transition = 'opacity 0.3s';
-      this.video.style.opacity = '0.5';
+      // Advanced settings
+      document.getElementById('confidence-slider').addEventListener('input', (e) => {
+        if (this.isLoadingSettings) return;
+        const value = e.target.value / 100;
+        document.getElementById('confidence-value').textContent = value.toFixed(2);
+        this.saveAdvancedSettings();
+      });
 
-      const newTime = segment.end;
+      document.getElementById('ai-model').addEventListener('change', () => {
+        if (this.isLoadingSettings) return;
+        this.saveAdvancedSettings();
+      });
+
+      document.getElementById('buffer-slider').addEventListener('input', (e) => {
+        if (this.isLoadingSettings) return;
+        const value = e.target.value / 10;
+        document.getElementById('buffer-value').textContent = value.toFixed(1) + 's';
+        this.saveAdvancedSettings();
+      });
+
+      // Buttons
+      document.getElementById('manual-analyze').addEventListener('click', () => {
+        this.handleManualAnalyze();
+      });
+
+      document.getElementById('view-cache').addEventListener('click', () => {
+        this.openCacheViewer();
+      });
+
+      document.getElementById('clear-current-cache').addEventListener('click', () => {
+        this.clearCurrentCache();
+      });
+
+      document.getElementById('clear-all-cache').addEventListener('click', () => {
+        this.clearAllCache();
+      });
+
+      document.getElementById('whitelist-btn').addEventListener('click', () => {
+        this.openWhitelistManager();
+      });
+
+      document.getElementById('dark-mode-toggle').addEventListener('click', () => {
+        this.toggleDarkMode();
+      });
+
+      // Modal
+      document.getElementById('modal-close').addEventListener('click', () => {
+        this.closeWhitelistModal();
+      });
+
+      document.getElementById('whitelist-modal').addEventListener('click', (e) => {
+        if (e.target.id === 'whitelist-modal') {
+          this.closeWhitelistModal();
+        }
+      });
+
+      document.getElementById('add-channel-btn').addEventListener('click', () => {
+        const input = document.getElementById('channel-input');
+        this.addChannelToWhitelist(input.value.trim());
+      });
+
+      document.getElementById('channel-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          this.addChannelToWhitelist(e.target.value.trim());
+        }
+      });
+
+      // Footer links
+      document.getElementById('help').addEventListener('click', (e) => {
+        e.preventDefault();
+        chrome.tabs.create({ url: 'https://github.com/yourusername/youtube-smart-skip/wiki' });
+      });
+
+      document.getElementById('privacy').addEventListener('click', (e) => {
+        e.preventDefault();
+        chrome.tabs.create({ url: 'privacy.html' });
+      });
+
+      document.getElementById('feedback').addEventListener('click', (e) => {
+        e.preventDefault();
+        chrome.tabs.create({ url: 'https://github.com/yourusername/youtube-smart-skip/issues' });
+      });
+
+      this.logger.debug('Event listeners configured');
+    }
+
+    /**
+     * Update status indicator
+     * @param {boolean} isActive - Active status
+     */
+    updateStatus(isActive) {
+      const statusDot = document.querySelector('.status-dot');
+      const statusText = document.getElementById('status-text');
+
+      if (isActive) {
+        statusDot.classList.remove('inactive');
+        statusDot.classList.add('active');
+        statusText.textContent = 'Active';
+      } else {
+        statusDot.classList.remove('active');
+        statusDot.classList.add('inactive');
+        statusText.textContent = 'Inactive';
+      }
+    }
+
+    /**
+     * Save settings
+     */
+    async saveSettings() {
+      try {
+        const settings = {
+          skipSponsors: document.getElementById('skip-sponsors').checked,
+          skipIntros: document.getElementById('skip-intros').checked,
+          skipOutros: document.getElementById('skip-outros').checked,
+          skipDonations: document.getElementById('skip-donations').checked,
+          skipSelfPromo: document.getElementById('skip-selfpromo').checked,
+          autoSkip: document.getElementById('master-toggle').checked,
+          skipBuffer: 0.5,
+          enablePreview: true
+        };
+
+        await this.storageService.updateSettings(settings);
+
+        // Notify content script
+        this.sendMessageToContentScript('updateSettings', settings);
+
+        this.logger.info('Settings saved', settings);
+      } catch (error) {
+        this.logger.error('Failed to save settings', { error: error.message });
+        this.showToast('Failed to save settings', 'error');
+      }
+    }
+
+    /**
+     * Save advanced settings
+     */
+    async saveAdvancedSettings() {
+      try {
+        // Get current whitelist first
+        const current = await this.storageService.getAdvancedSettings();
+
+        const advSettings = {
+          confidenceThreshold: parseFloat(document.getElementById('confidence-slider').value) / 100,
+          aiModel: document.getElementById('ai-model').value,
+          skipBuffer: parseFloat(document.getElementById('buffer-slider').value) / 10,
+          channelWhitelist: current.channelWhitelist // Preserve whitelist
+        };
+
+        await this.storageService.saveAdvancedSettings(
+          AdvancedSettings.fromJSON(advSettings)
+        );
+
+        // Notify content script
+        this.sendMessageToContentScript('updateAdvancedSettings', advSettings);
+
+        this.logger.info('Advanced settings saved', advSettings);
+      } catch (error) {
+        this.logger.error('Failed to save advanced settings', { error: error.message });
+        this.showToast('Failed to save advanced settings', 'error');
+      }
+    }
+
+    /**
+     * Handle manual analyze
+     */
+    async handleManualAnalyze() {
+      if (!this.currentVideoId) {
+        this.showToast('No active video', 'warning');
+        return;
+      }
+
+      try {
+        await this.storageService.invalidateCache(this.currentVideoId);
+        this.sendMessageToContentScript('manualAnalyze');
+        setTimeout(() => window.close(), 500);
+      } catch (error) {
+        this.logger.error('Failed to trigger manual analyze', { error: error.message });
+        this.showToast('Failed to start analysis', 'error');
+      }
+    }
+
+    /**
+     * Open cache viewer
+     */
+    openCacheViewer() {
+      const url = chrome.runtime.getURL('cache-viewer.html');
+      chrome.tabs.create({ url }, (tab) => {
+        if (chrome.runtime.lastError) {
+          this.logger.error('Failed to open cache viewer', {
+            error: chrome.runtime.lastError.message
+          });
+          this.showToast('Error opening cache page', 'error');
+        }
+      });
+    }
+
+    /**
+     * Clear current video cache
+     */
+    async clearCurrentCache() {
+      if (!this.currentVideoId) {
+        this.showToast('No active YouTube video', 'warning');
+        return;
+      }
+
+      if (!confirm('Clear cache for this video?')) {
+        return;
+      }
+
+      try {
+        await this.storageService.invalidateCache(this.currentVideoId);
+        this.showToast('Video cache cleared! Reload page to reanalyze', 'success');
+        await this.loadCacheInfo();
+      } catch (error) {
+        this.logger.error('Failed to clear current cache', { error: error.message });
+        this.showToast('Failed to clear cache', 'error');
+      }
+    }
+
+    /**
+     * Clear all cache
+     */
+    async clearAllCache() {
+      if (!confirm('⚠️ WARNING: Clear ALL cache?\n\nAll videos will need to be reanalyzed.')) {
+        return;
+      }
+
+      try {
+        await this.storageService.clearCache();
+        const stats = await this.storageService.getCacheStatistics();
+        this.showToast(`Cache cleared!`, 'success');
+        await this.loadCacheInfo();
+      } catch (error) {
+        this.logger.error('Failed to clear all cache', { error: error.message });
+        this.showToast('Failed to clear cache', 'error');
+      }
+    }
+
+    /**
+     * Open whitelist manager
+     */
+    async openWhitelistManager() {
+      const modal = document.getElementById('whitelist-modal');
+      modal.classList.add('active');
+
+      await this.loadWhitelistChannels();
+
+      // Try to get current channel
+      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tabs[0] && tabs[0].url && tabs[0].url.includes('youtube.com/watch')) {
+        chrome.tabs.sendMessage(tabs[0].id, { action: 'getCurrentChannel' }, (response) => {
+          if (response && response.channelName) {
+            const currentChannelInfo = document.getElementById('current-channel-info');
+            const currentChannelText = document.getElementById('current-channel-text');
+            currentChannelText.textContent = `📺 ${response.channelName}`;
+            currentChannelInfo.style.display = 'block';
+
+            document.getElementById('add-current-channel-btn').onclick = () => {
+              this.addChannelToWhitelist(response.channelName);
+            };
+          }
+        });
+      }
+    }
+
+    /**
+     * Close whitelist modal
+     */
+    closeWhitelistModal() {
+      document.getElementById('whitelist-modal').classList.remove('active');
+    }
+
+    /**
+     * Load whitelist channels
+     */
+    async loadWhitelistChannels() {
+      try {
+        const advSettings = await this.storageService.getAdvancedSettings();
+        const whitelist = advSettings.channelWhitelist;
+        const whitelistList = document.getElementById('whitelist-list');
+
+        if (whitelist.length === 0) {
+          whitelistList.innerHTML = '<div class="empty-state">No excluded channels.<br>Add channels to never analyze them.</div>';
+        } else {
+          whitelistList.innerHTML = whitelist.map(channel => `
+          <div class="whitelist-item">
+            <span class="whitelist-item-name">${channel}</span>
+            <button class="whitelist-item-remove" data-channel="${channel}">Remove</button>
+          </div>
+        `).join('');
+
+          // Add remove handlers
+          document.querySelectorAll('.whitelist-item-remove').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+              this.removeChannelFromWhitelist(e.target.getAttribute('data-channel'));
+            });
+          });
+        }
+      } catch (error) {
+        this.logger.error('Failed to load whitelist', { error: error.message });
+      }
+    }
+
+    /**
+     * Add channel to whitelist
+     * @param {string} channelName - Channel name
+     */
+    async addChannelToWhitelist(channelName) {
+      if (!channelName || !channelName.trim()) {
+        this.showToast('Enter a valid channel name', 'warning');
+        return;
+      }
+
+      try {
+        await this.storageService.addToWhitelist(channelName.trim());
+
+        const advSettings = await this.storageService.getAdvancedSettings();
+        this.loadAdvancedSettingsUI(advSettings);
+        await this.loadWhitelistChannels();
+
+        this.showToast(`Channel "${channelName}" added to whitelist`, 'success');
+
+        const input = document.getElementById('channel-input');
+        if (input) input.value = '';
+      } catch (error) {
+        this.logger.error('Failed to add channel', { error: error.message });
+        this.showToast('Channel already in whitelist', 'warning');
+      }
+    }
+
+    /**
+     * Remove channel from whitelist
+     * @param {string} channelName - Channel name
+     */
+    async removeChannelFromWhitelist(channelName) {
+      try {
+        await this.storageService.removeFromWhitelist(channelName);
+
+        const advSettings = await this.storageService.getAdvancedSettings();
+        this.loadAdvancedSettingsUI(advSettings);
+        await this.loadWhitelistChannels();
+
+        this.showToast(`Channel "${channelName}" removed`, 'info');
+      } catch (error) {
+        this.logger.error('Failed to remove channel', { error: error.message });
+        this.showToast('Failed to remove channel', 'error');
+      }
+    }
+
+    /**
+     * Toggle dark mode
+     */
+    async toggleDarkMode() {
+      const isDark = document.body.classList.toggle('dark-mode');
+      await chrome.storage.local.set({ darkMode: isDark });
+      this.updateDarkModeIcon(isDark);
+      this.showToast(isDark ? 'Dark mode enabled' : 'Dark mode disabled', 'info', 2000);
+    }
+
+    /**
+     * Update dark mode icon
+     * @param {boolean} isDark - Dark mode status
+     */
+    updateDarkModeIcon(isDark) {
+      const toggle = document.getElementById('dark-mode-toggle');
+      const icon = toggle.querySelector('.material-icons');
+      icon.textContent = isDark ? 'light_mode' : 'dark_mode';
+      toggle.title = isDark ? 'Enable Light Mode' : 'Enable Dark Mode';
+    }
+
+    /**
+     * Send message to content script
+     * @param {string} action - Action
+     * @param {Object} data - Data
+     */
+    sendMessageToContentScript(action, data = {}) {
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0] && tabs[0].url && tabs[0].url.includes('youtube.com/watch')) {
+          chrome.tabs.sendMessage(tabs[0].id, { action, ...data }, (response) => {
+            if (chrome.runtime.lastError) {
+              this.logger.debug('Content script not available', {
+                error: chrome.runtime.lastError.message
+              });
+            }
+          });
+        }
+      });
+    }
+
+    /**
+     * Show toast notification
+     * @param {string} message - Message
+     * @param {string} type - Type
+     * @param {number} duration - Duration in ms
+     */
+    showToast(message, type = 'info', duration = 3000) {
+      const container = document.getElementById('toast-container');
+
+      const iconMap = {
+        success: '✓',
+        error: '✕',
+        warning: '⚠',
+        info: 'ℹ'
+      };
+
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerHTML = `
+      <span class="toast-icon">${iconMap[type] || iconMap.info}</span>
+      <span class="toast-message">${message}</span>
+      <button class="toast-close">&times;</button>
+    `;
+
+      container.appendChild(toast);
+
+      toast.querySelector('.toast-close').addEventListener('click', () => {
+        this.removeToast(toast);
+      });
 
       setTimeout(() => {
-        this.video.currentTime = newTime;
-        this.video.style.opacity = '1';
+        this.removeToast(toast);
+      }, duration);
+    }
 
-        this.showNotification(
-          `⏩ Skipped: ${segment.category} (${segment.getDuration()}s saved)`,
-          'success'
-        );
-
-        // Remove skipped segments
-        this.skipSegments = this.skipSegments.filter(s => s.end > newTime);
-
-        this.logger.debug('Skip complete', {
-          remainingSegments: this.skipSegments.length
-        });
+    /**
+     * Remove toast
+     * @param {HTMLElement} toast - Toast element
+     */
+    removeToast(toast) {
+      toast.style.animation = 'slideOut 0.3s ease';
+      setTimeout(() => {
+        toast.remove();
       }, 300);
     }
-
-    /**
-     * Show skip preview notification
-     * @param {Segment} segment - Segment to preview
-     */
-    showSkipPreview(segment) {
-      const preview = document.createElement('div');
-      preview.className = 'yss-skip-preview';
-      preview.innerHTML = `
-      <div class="yss-preview-content">
-        <span>⏩ Skipping ${segment.category} in ${this.settings.skipBuffer}s</span>
-        <button class="yss-cancel-skip">Cancel</button>
-      </div>
-    `;
-
-      preview.style.cssText = `
-      position: fixed;
-      top: 80px;
-      right: 20px;
-      background: rgba(0, 0, 0, 0.8);
-      color: white;
-      padding: 15px;
-      border-radius: 8px;
-      z-index: 9999;
-      font-family: Roboto, Arial, sans-serif;
-    `;
-
-      document.body.appendChild(preview);
-
-      // Handle cancellation
-      preview.querySelector('.yss-cancel-skip').onclick = () => {
-        this.skipSegments = this.skipSegments.filter(s => s !== segment);
-        preview.remove();
-        this.logger.debug('Skip cancelled', { category: segment.category });
-      };
-
-      // Auto remove
-      setTimeout(() => preview.remove(), this.settings.skipBuffer * 1000 + 500);
-    }
-
-    /**
-     * Analyze video with AI
-     * @param {string} videoId - Video ID
-     */
-    async analyzeVideo(videoId) {
-      if (this.isAnalyzing) {
-        this.logger.warn('Analysis already in progress', { videoId });
-        return;
-      }
-
-      this.isAnalyzing = true;
-      this.showNotification('🔍 Analyzing video with AI...', 'info');
-
-      const stopTimer = this.logger.time(`analyzeVideo:${videoId}`);
-
-      try {
-        // Extract transcript
-        const channelId = this.extractChannelId();
-        const transcript = await this.transcriptService.extractFromDOM(videoId, channelId);
-
-        if (!transcript) {
-          throw new TranscriptNotAvailableError(videoId);
-        }
-
-        this.logger.info('Transcript extracted', {
-          videoId,
-          wordCount: transcript.getWordCount(),
-          segments: transcript.segments.length
-        });
-
-        // Validate transcript quality
-        const quality = this.transcriptService.validateQuality(transcript);
-        if (!quality.isValid) {
-          this.logger.warn('Transcript quality issues', { issues: quality.issues });
-        }
-
-        this.showNotification(
-          `✓ Transcript loaded: ${transcript.segments.length} segments. Analyzing with AI...`,
-          'info'
-        );
-
-        // Get video title
-        const videoTitle = document.querySelector('h1.ytd-watch-metadata yt-formatted-string')?.textContent || 'YouTube Video';
-
-        // Send to background for AI analysis
-        const result = await chrome.runtime.sendMessage({
-          action: 'analyzeTranscript',
-          data: {
-            videoId: videoId,
-            transcript: transcript.segments,
-            title: videoTitle,
-            settings: this.settings.toJSON()
-          }
-        });
-
-        stopTimer();
-
-        if (result.success && result.segments && result.segments.length > 0) {
-          // Convert to Segment models
-          this.skipSegments = result.segments.map(s => Segment.fromJSON(s));
-
-          // Setup monitoring with new segments
-          this.setupVideoMonitoring();
-
-          // Display on timeline
-          this.displaySegments();
-
-          this.showNotification(
-            `✅ Found ${result.segments.length} segments to skip!`,
-            'success'
-          );
-
-          this.logger.info('Analysis complete', {
-            videoId,
-            segments: result.segments.length,
-            categories: Segment.groupByCategory(this.skipSegments)
-          });
-
-        } else if (result.success) {
-          this.showNotification('ℹ️ No content to skip detected by AI', 'info');
-          this.logger.info('No segments found', { videoId });
-        } else {
-          throw new Error(result.error || 'Unknown analysis error');
-        }
-
-      } catch (error) {
-        stopTimer();
-
-        this.logger.error('Analysis failed', {
-          videoId,
-          error: error.message,
-          name: error.name
-        });
-
-        if (error instanceof TranscriptNotAvailableError) {
-          this.showNotification(
-            '⚠️ Transcript not available for this video. The extension only works with videos that have subtitles.',
-            'warning'
-          );
-        } else {
-          this.showNotification(
-            `❌ Analysis error: ${error.message}`,
-            'error'
-          );
-        }
-      } finally {
-        this.isAnalyzing = false;
-      }
-    }
-
-    /**
-     * Display segments on video timeline
-     */
-    displaySegments() {
-      // Remove previous markers
-      document.querySelectorAll('.yss-segment-marker').forEach(m => m.remove());
-      document.querySelectorAll('.yss-segment-tooltip').forEach(t => t.remove());
-
-      const progressBar = document.querySelector('.ytp-progress-bar');
-      if (!progressBar || !this.video) return;
-
-      const duration = this.video.duration;
-      if (!duration || duration === 0) {
-        this.logger.warn('Video duration not available');
-        return;
-      }
-
-      this.logger.debug('Displaying segments on timeline', {
-        count: this.skipSegments.length,
-        duration
-      });
-
-      this.skipSegments.forEach((segment, index) => {
-        // Get color by category
-        const color = this.getCategoryColor(segment.category);
-
-        // Calculate position and width
-        const left = (segment.start / duration) * 100;
-        const width = (segment.getDuration() / duration) * 100;
-
-        // Create marker
-        const marker = document.createElement('div');
-        marker.className = 'yss-segment-marker';
-        marker.dataset.index = index;
-        marker.style.cssText = `
-        position: absolute;
-        left: ${left}%;
-        width: ${width}%;
-        height: 100%;
-        background: ${color};
-        opacity: 0.6;
-        z-index: 25;
-        cursor: pointer;
-        transition: opacity 0.2s;
-      `;
-
-        // Hover handlers
-        marker.addEventListener('mouseenter', (e) => {
-          marker.style.opacity = '0.9';
-          this.showSegmentTooltip(segment, e);
-        });
-
-        marker.addEventListener('mouseleave', () => {
-          marker.style.opacity = '0.6';
-          this.hideSegmentTooltip();
-        });
-
-        // Click to skip
-        marker.addEventListener('click', (e) => {
-          e.stopPropagation();
-          if (this.video) {
-            this.video.currentTime = segment.end;
-            this.showNotification(`⏩ Skipped manually: ${segment.category}`, 'info');
-          }
-        });
-
-        progressBar.appendChild(marker);
-      });
-    }
-
-    /**
-     * Get color for category
-     * @param {string} category - Category name
-     * @returns {string}
-     */
-    getCategoryColor(category) {
-      const colors = {
-        'Sponsor': '#FF0000',
-        'Self-Promo': '#FF8800',
-        'Autopromo': '#FF8800',
-        'Intro': '#00FFFF',
-        'Outro': '#CC00FF',
-        'Donations': '#00FF00',
-        'Ringraziamenti': '#00FF00',
-        'Acknowledgments': '#00FF00',
-        'Merchandise': '#FF8800'
-      };
-
-      // Find matching color
-      for (const [cat, col] of Object.entries(colors)) {
-        if (category.includes(cat)) {
-          return col;
-        }
-      }
-
-      return '#FF0000'; // Default red
-    }
-
-    /**
-     * Show segment tooltip
-     * @param {Segment} segment - Segment
-     * @param {Event} event - Mouse event
-     */
-    showSegmentTooltip(segment, event) {
-      this.hideSegmentTooltip();
-
-      const tooltip = document.createElement('div');
-      tooltip.className = 'yss-segment-tooltip';
-
-      tooltip.innerHTML = `
-      <div style="font-weight: bold; margin-bottom: 4px;">${segment.category}</div>
-      <div style="font-size: 12px; opacity: 0.9;">
-        ${segment.getTimeRange()} (${segment.getDuration()}s)
-      </div>
-      <div style="font-size: 11px; margin-top: 4px; opacity: 0.8;">
-        ${segment.description}
-      </div>
-      <div style="font-size: 10px; margin-top: 6px; opacity: 0.7; font-style: italic;">
-        Click to skip
-      </div>
-    `;
-
-      tooltip.style.cssText = `
-      position: fixed;
-      background: rgba(0, 0, 0, 0.95);
-      color: white;
-      padding: 10px 12px;
-      border-radius: 6px;
-      z-index: 10000;
-      pointer-events: none;
-      font-family: Roboto, Arial, sans-serif;
-      font-size: 13px;
-      max-width: 300px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-    `;
-
-      document.body.appendChild(tooltip);
-
-      // Position tooltip
-      const rect = event.target.getBoundingClientRect();
-      tooltip.style.left = `${rect.left + rect.width / 2 - tooltip.offsetWidth / 2}px`;
-      tooltip.style.bottom = `${window.innerHeight - rect.top + 10}px`;
-    }
-
-    /**
-     * Hide segment tooltip
-     */
-    hideSegmentTooltip() {
-      const tooltip = document.querySelector('.yss-segment-tooltip');
-      if (tooltip) tooltip.remove();
-    }
-
-    /**
-     * Show notification
-     * @param {string} message - Message
-     * @param {string} type - Type (info, success, warning, error)
-     */
-    showNotification(message, type = 'info') {
-      const notification = document.createElement('div');
-      notification.className = `yss-notification yss-${type}`;
-      notification.textContent = message;
-
-      const colors = {
-        info: '#3498db',
-        success: '#27ae60',
-        warning: '#f39c12',
-        error: '#e74c3c'
-      };
-
-      notification.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: ${colors[type]};
-      color: white;
-      padding: 12px 20px;
-      border-radius: 6px;
-      z-index: 9999;
-      font-family: Roboto, Arial, sans-serif;
-      animation: slideIn 0.3s ease;
-    `;
-
-      document.body.appendChild(notification);
-      setTimeout(() => notification.remove(), 3000);
-    }
-
-    /**
-     * Setup message listener
-     */
-    setupMessageListener() {
-      chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-        this.logger.debug('Message received', { action: request.action });
-
-        if (request.action === 'updateSettings') {
-          this.loadSettings().then(() => {
-            this.logger.info('Settings updated from popup');
-          });
-        }
-
-        if (request.action === 'updateAdvancedSettings') {
-          this.loadSettings().then(() => {
-            this.logger.info('Advanced settings updated from popup');
-          });
-        }
-
-        if (request.action === 'manualAnalyze') {
-          if (this.currentVideoId) {
-            // Clear cache and reanalyze
-            this.storageService.invalidateCache(this.currentVideoId).then(() => {
-              this.analyzeVideo(this.currentVideoId);
-            });
-          }
-        }
-
-        if (request.action === 'getCurrentChannel') {
-          const channelLinkElement = document.querySelector('ytd-channel-name a');
-          if (channelLinkElement) {
-            const channelHandle = channelLinkElement.textContent?.trim();
-            const channelUrl = channelLinkElement.href;
-            const channelId = channelUrl?.split('/').pop();
-
-            sendResponse({
-              channelName: channelHandle || channelId,
-              channelId: channelId,
-              channelUrl: channelUrl
-            });
-          } else {
-            sendResponse({ channelName: null });
-          }
-          return true;
-        }
-      });
-    }
-
-    /**
-     * Delay helper
-     * @param {number} ms - Milliseconds
-     * @returns {Promise}
-     */
-    delay(ms) {
-      return new Promise(resolve => setTimeout(resolve, ms));
-    }
   }
 
-  // CSS Styles
-  const style = document.createElement('style');
-  style.textContent = `
-  @keyframes slideIn {
-    from {
-      transform: translateX(100%);
-      opacity: 0;
-    }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
-  }
-
-  .yss-cancel-skip {
-    margin-left: 10px;
-    padding: 5px 10px;
-    background: rgba(255, 255, 255, 0.2);
-    border: 1px solid white;
-    color: white;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-
-  .yss-cancel-skip:hover {
-    background: rgba(255, 255, 255, 0.3);
-  }
-`;
-  document.head.appendChild(style);
-
-  // Initialize when page is ready
+  // Initialize when DOM is ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-      new YouTubeSkipManager();
+      new PopupManager();
     });
   } else {
-    new YouTubeSkipManager();
+    new PopupManager();
   }
 
   // Export for testing
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { YouTubeSkipManager };
+    module.exports = { PopupManager };
   }
 
 })();
