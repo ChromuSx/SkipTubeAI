@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cache Video - YouTube Smart Skip</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    /* Material Icons */
+    .material-icons {
+      font-family: 'Material Icons';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 24px;
+      display: inline-block;
+      line-height: 1;
+      text-transform: none;
+      letter-spacing: normal;
+      word-wrap: normal;
+      white-space: nowrap;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+      -moz-osx-font-smoothing: grayscale;
+      font-feature-settings: 'liga';
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: #f8f9fa;
+      min-height: 100vh;
+      color: #202124;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    /* Header - Material Design */
+    .header {
+      background: white;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-radius: 8px;
+      box-shadow: 0 1px 2px rgba(60, 64, 67, 0.3), 0 1px 3px rgba(60, 64, 67, 0.15);
+    }
+
+    .header h1 {
+      font-size: 24px;
+      font-weight: 400;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #202124;
+      line-height: 32px;
+    }
+
+    .header h1 .material-icons {
+      font-size: 28px;
+      color: #5f6368;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 10px 24px;
+      background: transparent;
+      border: 1px solid #dadce0;
+      border-radius: 20px;
+      color: #1a73e8;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 200ms cubic-bezier(0.2, 0, 0, 1);
+      font-family: 'Roboto', sans-serif;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: 0.25px;
+    }
+
+    .btn:hover {
+      background: rgba(26, 115, 232, 0.04);
+      border-color: #1a73e8;
+    }
+
+    .btn .material-icons {
+      font-size: 18px;
+    }
+
+    .btn.danger {
+      color: #d93025;
+      border-color: #dadce0;
+    }
+
+    .btn.danger:hover {
+      background: rgba(217, 48, 37, 0.04);
+      border-color: #d93025;
+    }
+
+    /* Stats Bar - Material Cards */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: white;
+      border-radius: 8px;
+      padding: 24px;
+      border: 1px solid #dadce0;
+      transition: all 200ms cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    .stat-card:hover {
+      box-shadow: 0 1px 2px rgba(60, 64, 67, 0.3), 0 1px 3px rgba(60, 64, 67, 0.15);
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: 400;
+      margin-bottom: 8px;
+      color: #202124;
+      line-height: 40px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #5f6368;
+      font-weight: 400;
+      letter-spacing: 0.3px;
+      line-height: 16px;
+    }
+
+    /* Filters - Material Input */
+    .filters {
+      background: white;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 24px;
+      border: 1px solid #dadce0;
+    }
+
+    .search-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 16px;
+      color: #5f6368;
+      font-size: 20px;
+    }
+
+    .filters input {
+      width: 100%;
+      padding: 12px 16px 12px 48px;
+      border: 2px solid #dadce0;
+      border-radius: 24px;
+      background: #f8f9fa;
+      color: #202124;
+      font-size: 14px;
+      font-family: 'Roboto', sans-serif;
+      transition: all 200ms cubic-bezier(0.2, 0, 0, 1);
+      letter-spacing: 0.25px;
+    }
+
+    .filters input::placeholder {
+      color: #5f6368;
+    }
+
+    .filters input:focus {
+      outline: none;
+      border-color: #1a73e8;
+      background: white;
+      box-shadow: 0 1px 2px rgba(60, 64, 67, 0.3);
+    }
+
+    /* Video List */
+    .video-list {
+      display: grid;
+      gap: 16px;
+    }
+
+    .video-card {
+      background: white;
+      border-radius: 8px;
+      padding: 24px;
+      border: 1px solid #dadce0;
+      transition: all 200ms cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    .video-card:hover {
+      box-shadow: 0 1px 2px rgba(60, 64, 67, 0.3), 0 1px 3px rgba(60, 64, 67, 0.15);
+    }
+
+    .video-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 16px;
+    }
+
+    .video-info {
+      flex: 1;
+    }
+
+    .video-id {
+      font-size: 12px;
+      color: #5f6368;
+      margin-bottom: 8px;
+      font-family: 'Roboto Mono', 'Courier New', monospace;
+      letter-spacing: 0.3px;
+    }
+
+    .video-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      padding: 8px;
+      background: transparent;
+      border: none;
+      border-radius: 50%;
+      color: #5f6368;
+      cursor: pointer;
+      transition: all 200ms cubic-bezier(0.2, 0, 0, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .icon-btn:hover {
+      background: rgba(0, 0, 0, 0.04);
+    }
+
+    .icon-btn.danger:hover {
+      background: rgba(217, 48, 37, 0.04);
+      color: #d93025;
+    }
+
+    .icon-btn .material-icons {
+      font-size: 20px;
+    }
+
+    /* Segments - Material Chips */
+    .segments {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .segment-badge {
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 12px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      letter-spacing: 0.3px;
+    }
+
+    .segment-badge .material-icons {
+      font-size: 16px;
+    }
+
+    .segment-badge.sponsor {
+      background: #fce4ec;
+      color: #c2185b;
+    }
+
+    .segment-badge.autopromo {
+      background: #fff3e0;
+      color: #e65100;
+    }
+
+    .segment-badge.intro {
+      background: #e3f2fd;
+      color: #1565c0;
+    }
+
+    .segment-badge.outro {
+      background: #f3e5f5;
+      color: #7b1fa2;
+    }
+
+    .segment-badge.donations {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+
+    .segment-details {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #e0e0e0;
+      font-size: 13px;
+      color: #5f6368;
+      line-height: 20px;
+      letter-spacing: 0.25px;
+    }
+
+    .segment-details strong {
+      color: #202124;
+      font-weight: 500;
+    }
+
+    .segment-time {
+      color: #5f6368;
+      font-family: 'Roboto Mono', 'Courier New', monospace;
+      font-size: 12px;
+    }
+
+    /* Empty State - Material */
+    .empty-state {
+      background: white;
+      border-radius: 8px;
+      padding: 80px 40px;
+      text-align: center;
+      border: 1px solid #dadce0;
+    }
+
+    .empty-state-icon {
+      font-size: 64px;
+      margin-bottom: 24px;
+      color: #5f6368;
+    }
+
+    .empty-state h2 {
+      font-size: 22px;
+      font-weight: 400;
+      margin-bottom: 8px;
+      color: #202124;
+      line-height: 28px;
+    }
+
+    .empty-state p {
+      color: #5f6368;
+      font-size: 14px;
+      line-height: 20px;
+      letter-spacing: 0.25px;
+    }
+
+    /* Loading - Material */
+    .loading {
+      background: white;
+      border-radius: 8px;
+      text-align: center;
+      padding: 80px 40px;
+      font-size: 16px;
+      color: #5f6368;
+      border: 1px solid #dadce0;
+    }
+
+    .loading .material-icons {
+      font-size: 48px;
+      display: block;
+      margin: 0 auto 24px;
+      color: #1a73e8;
+      animation: spin 2s linear infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1>
+        <span class="material-icons">view_list</span>
+        <span>Cache Video Analizzati</span>
+      </h1>
+      <div class="header-actions">
+        <button class="btn" id="refresh-btn">
+          <span class="material-icons">refresh</span>
+          Aggiorna
+        </button>
+        <button class="btn danger" id="clear-all-btn">
+          <span class="material-icons">delete_forever</span>
+          Cancella Tutto
+        </button>
+      </div>
+    </div>
+
+    <!-- Statistics Bar -->
+    <div class="stats-bar">
+      <div class="stat-card">
+        <div class="stat-value" id="total-videos">0</div>
+        <div class="stat-label">Video in Cache</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="total-segments">0</div>
+        <div class="stat-label">Segmenti Totali</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="cache-size">0 KB</div>
+        <div class="stat-label">Dimensione Cache</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="total-time">0m</div>
+        <div class="stat-label">Tempo Analizzato</div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters">
+      <div class="search-wrapper">
+        <span class="material-icons search-icon">search</span>
+        <input type="text" id="search-input" placeholder="Cerca per ID video...">
+      </div>
+    </div>
+
+    <!-- Video List -->
+    <div class="video-list" id="video-list">
+      <div class="loading">
+        <span class="material-icons">hourglass_empty</span>
+        Caricamento cache...
+      </div>
+    </div>
+  </div>
+
+  <script src="cache-viewer.js"></script>
+</body>
+</html>
