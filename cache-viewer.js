@@ -1,6 +1,9 @@
 // cache-viewer.js - Script for cache viewer page
 let cacheData = [];
 
+// Load dark mode preference on startup
+loadDarkMode();
+
 // Load cache on startup
 loadCache();
 
@@ -8,6 +11,28 @@ loadCache();
 document.getElementById('refresh-btn').addEventListener('click', loadCache);
 document.getElementById('clear-all-btn').addEventListener('click', clearAllCache);
 document.getElementById('search-input').addEventListener('input', filterVideos);
+document.getElementById('dark-mode-toggle').addEventListener('click', toggleDarkMode);
+
+// Dark mode functions
+async function loadDarkMode() {
+  const data = await chrome.storage.local.get(['darkMode']);
+  if (data.darkMode) {
+    document.body.classList.add('dark-mode');
+    updateDarkModeIcon();
+  }
+}
+
+async function toggleDarkMode() {
+  const isDark = document.body.classList.toggle('dark-mode');
+  await chrome.storage.local.set({ darkMode: isDark });
+  updateDarkModeIcon();
+}
+
+function updateDarkModeIcon() {
+  const toggle = document.getElementById('dark-mode-toggle');
+  const icon = toggle.querySelector('.material-icons');
+  icon.textContent = document.body.classList.contains('dark-mode') ? 'light_mode' : 'dark_mode';
+}
 
 function loadCache() {
   chrome.storage.local.get(null, (items) => {

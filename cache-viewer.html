@@ -387,6 +387,129 @@
       from { transform: rotate(0deg); }
       to { transform: rotate(360deg); }
     }
+
+    /* ========== DARK MODE ========== */
+    body.dark-mode {
+      background: #0f0f0f;
+      color: #f1f1f1;
+    }
+
+    body.dark-mode .header,
+    body.dark-mode .stat-card,
+    body.dark-mode .filters,
+    body.dark-mode .video-card,
+    body.dark-mode .empty-state,
+    body.dark-mode .loading {
+      background: #1e1e1e;
+      border-color: #3a3a3a;
+    }
+
+    body.dark-mode .header h1,
+    body.dark-mode .stat-value,
+    body.dark-mode .empty-state h2,
+    body.dark-mode .segment-details strong {
+      color: #f1f1f1;
+    }
+
+    body.dark-mode .stat-label,
+    body.dark-mode .video-id,
+    body.dark-mode .segment-details,
+    body.dark-mode .segment-time,
+    body.dark-mode .empty-state p,
+    body.dark-mode .loading,
+    body.dark-mode .filters input::placeholder {
+      color: #aaaaaa;
+    }
+
+    body.dark-mode .header h1 .material-icons,
+    body.dark-mode .icon-btn,
+    body.dark-mode .search-icon,
+    body.dark-mode .empty-state-icon {
+      color: #aaaaaa;
+    }
+
+    body.dark-mode .filters input {
+      background: #272727;
+      border-color: #3a3a3a;
+      color: #f1f1f1;
+    }
+
+    body.dark-mode .filters input:focus {
+      background: #1e1e1e;
+      border-color: #1a73e8;
+    }
+
+    body.dark-mode .btn {
+      background: #272727;
+      color: #f1f1f1;
+      border-color: #3a3a3a;
+    }
+
+    body.dark-mode .btn:hover {
+      background: #3d3d3d;
+    }
+
+    body.dark-mode .btn.danger {
+      color: #f28b82;
+    }
+
+    body.dark-mode .btn.danger:hover {
+      background: rgba(242, 139, 130, 0.1);
+      border-color: #f28b82;
+    }
+
+    body.dark-mode .icon-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    body.dark-mode .icon-btn.danger:hover {
+      background: rgba(242, 139, 130, 0.1);
+      color: #f28b82;
+    }
+
+    body.dark-mode .stat-card:hover,
+    body.dark-mode .video-card:hover {
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+    }
+
+    body.dark-mode .segment-details {
+      border-top-color: #3a3a3a;
+    }
+
+    /* Dark mode toggle button */
+    .dark-mode-toggle {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      width: 56px;
+      height: 56px;
+      background: #1a73e8;
+      border: none;
+      border-radius: 50%;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .dark-mode-toggle:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    body.dark-mode .dark-mode-toggle {
+      background: #f1f1f1;
+      color: #0f0f0f;
+    }
+
+    body.dark-mode .dark-mode-toggle:hover {
+      background: #e5e5e5;
+    }
   </style>
 </head>
 <body>
@@ -445,6 +568,11 @@
       </div>
     </div>
   </div>
+
+  <!-- Dark Mode Toggle -->
+  <button class="dark-mode-toggle" id="dark-mode-toggle" title="Toggle Dark Mode">
+    <span class="material-icons">dark_mode</span>
+  </button>
 
   <script src="cache-viewer.js"></script>
 </body>

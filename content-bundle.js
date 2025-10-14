@@ -4702,14 +4702,19 @@
      * Show skip preview notification
      * @param {Segment} segment - Segment to preview
      */
-    showSkipPreview(segment) {
+    async showSkipPreview(segment) {
       const preview = document.createElement('div');
       preview.className = 'yss-skip-preview';
+
+      // Check dark mode preference
+      const { darkMode } = await chrome.storage.local.get(['darkMode']);
+      const bgColor = darkMode ? '#1e1e1e' : 'white';
+      const textColor = darkMode ? '#f1f1f1' : '#202124';
 
       preview.innerHTML = `
       <div style="display: flex; align-items: center; gap: 12px;">
         <span class="material-icons" style="font-size: 20px; flex-shrink: 0; color: #f9ab00;">fast_forward</span>
-        <div style="flex: 1;">
+        <div style="flex: 1; color: ${textColor};">
           <div style="font-weight: 500; font-size: 14px; margin-bottom: 4px;">Skipping ${segment.category}</div>
           <div style="font-size: 12px; opacity: 0.9;">In ${this.settings.skipBuffer}s</div>
         </div>
@@ -4733,12 +4738,12 @@
       position: fixed;
       top: 80px;
       right: 20px;
-      background: white;
-      color: #202124;
+      background: ${bgColor};
+      color: ${textColor};
       padding: 14px 16px;
       border-radius: 8px;
       border-left: 4px solid #f9ab00;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, ${darkMode ? '0.5' : '0.15'}), 0 1px 3px rgba(0, 0, 0, ${darkMode ? '0.3' : '0.1'});
       z-index: 10000;
       font-family: Roboto, Arial, sans-serif;
       min-width: 300px;
@@ -4987,26 +4992,34 @@
      * @param {Segment} segment - Segment
      * @param {Event} event - Mouse event
      */
-    showSegmentTooltip(segment, event) {
+    async showSegmentTooltip(segment, event) {
       this.hideSegmentTooltip();
 
       const tooltip = document.createElement('div');
       tooltip.className = 'yss-segment-tooltip';
+
+      // Check dark mode preference
+      const { darkMode } = await chrome.storage.local.get(['darkMode']);
+      const bgColor = darkMode ? '#1e1e1e' : 'white';
+      const textColor = darkMode ? '#f1f1f1' : '#202124';
+      const secondaryColor = darkMode ? '#aaaaaa' : '#5f6368';
+      const borderColor = darkMode ? '#3a3a3a' : '#dadce0';
+      const dividerColor = darkMode ? '#3a3a3a' : '#e8eaed';
 
       const categoryColor = this.getCategoryColor(segment.category);
 
       tooltip.innerHTML = `
       <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
         <div style="width: 4px; height: 16px; background: ${categoryColor}; border-radius: 2px;"></div>
-        <div style="font-weight: 500; font-size: 14px; color: #202124;">${segment.category}</div>
+        <div style="font-weight: 500; font-size: 14px; color: ${textColor};">${segment.category}</div>
       </div>
-      <div style="font-size: 12px; color: #5f6368; margin-bottom: 6px;">
+      <div style="font-size: 12px; color: ${secondaryColor}; margin-bottom: 6px;">
         ${segment.getTimeRange()} • ${segment.getDuration()}s
       </div>
-      <div style="font-size: 12px; color: #202124; line-height: 1.5; margin-bottom: 8px;">
+      <div style="font-size: 12px; color: ${textColor}; line-height: 1.5; margin-bottom: 8px;">
         ${segment.description}
       </div>
-      <div style="display: flex; align-items: center; gap: 4px; font-size: 11px; color: #5f6368; padding-top: 6px; border-top: 1px solid #e8eaed;">
+      <div style="display: flex; align-items: center; gap: 4px; font-size: 11px; color: ${secondaryColor}; padding-top: 6px; border-top: 1px solid ${dividerColor};">
         <span class="material-icons" style="font-size: 14px;">touch_app</span>
         <span>Click to skip</span>
       </div>
@@ -5014,16 +5027,16 @@
 
       tooltip.style.cssText = `
       position: fixed;
-      background: white;
-      color: #202124;
+      background: ${bgColor};
+      color: ${textColor};
       padding: 12px 14px;
       border-radius: 8px;
       z-index: 10000;
       pointer-events: none;
       font-family: Roboto, Arial, sans-serif;
       max-width: 300px;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2), 0 2px 6px rgba(0, 0, 0, 0.12);
-      border: 1px solid #dadce0;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, ${darkMode ? '0.5' : '0.2'}), 0 2px 6px rgba(0, 0, 0, ${darkMode ? '0.3' : '0.12'});
+      border: 1px solid ${borderColor};
     `;
 
       document.body.appendChild(tooltip);
@@ -5047,9 +5060,12 @@
      * @param {string} message - Message
      * @param {string} type - Type (info, success, warning, error)
      */
-    showNotification(message, type = 'info') {
+    async showNotification(message, type = 'info') {
       const notification = document.createElement('div');
       notification.className = `yss-notification yss-${type}`;
+
+      // Check dark mode preference
+      const { darkMode } = await chrome.storage.local.get(['darkMode']);
 
       // Material Icons
       const icons = {
@@ -5066,11 +5082,15 @@
         error: '#d93025'
       };
 
+      const bgColor = darkMode ? '#1e1e1e' : 'white';
+      const textColor = darkMode ? '#f1f1f1' : '#202124';
+      const closeColor = darkMode ? '#aaaaaa' : '#5f6368';
+
       notification.innerHTML = `
       <div style="display: flex; align-items: center; gap: 12px;">
         <span class="material-icons" style="font-size: 20px; flex-shrink: 0; color: ${borderColors[type]};">${icons[type]}</span>
-        <span style="flex: 1; font-size: 14px; line-height: 20px;">${message}</span>
-        <button class="yss-close-notification" style="background: none; border: none; color: #5f6368; cursor: pointer; padding: 0; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">&times;</button>
+        <span style="flex: 1; font-size: 14px; line-height: 20px; color: ${textColor};">${message}</span>
+        <button class="yss-close-notification" style="background: none; border: none; color: ${closeColor}; cursor: pointer; padding: 0; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">&times;</button>
       </div>
     `;
 
@@ -5078,12 +5098,12 @@
       position: fixed;
       top: 20px;
       right: 20px;
-      background: white;
-      color: #202124;
+      background: ${bgColor};
+      color: ${textColor};
       padding: 14px 16px;
       border-radius: 8px;
       border-left: 4px solid ${borderColors[type]};
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, ${darkMode ? '0.5' : '0.15'}), 0 1px 3px rgba(0, 0, 0, ${darkMode ? '0.3' : '0.1'});
       z-index: 10000;
       font-family: Roboto, Arial, sans-serif;
       min-width: 280px;
@@ -5099,11 +5119,11 @@
       });
 
       closeBtn.addEventListener('mouseenter', () => {
-        closeBtn.style.color = '#202124';
+        closeBtn.style.color = textColor;
       });
 
       closeBtn.addEventListener('mouseleave', () => {
-        closeBtn.style.color = '#5f6368';
+        closeBtn.style.color = closeColor;
       });
 
       document.body.appendChild(notification);
