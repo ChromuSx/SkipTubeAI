@@ -1,4 +1,4 @@
-// content.js - Gestisce l'interazione con YouTube
+// content.js - Handles interaction with YouTube
 class YouTubeSkipManager {
   constructor() {
     this.video = null;
@@ -6,7 +6,7 @@ class YouTubeSkipManager {
     this.isAnalyzing = false;
     this.currentVideoId = null;
     this.transcriptCache = new Map();
-    this.timedtextWarningShown = false; // Flag per evitare spam warning
+    this.timedtextWarningShown = false; // Flag to avoid spam warnings
 
     this.settings = {
       skipSponsors: true,
@@ -14,7 +14,7 @@ class YouTubeSkipManager {
       skipOutros: true,
       skipDonations: true,
       skipSelfPromo: true,
-      skipBuffer: 0.5, // secondi di buffer prima dello skip
+      skipBuffer: 0.5, // seconds of buffer before skip
       enablePreview: true,
       autoSkip: true
     };
@@ -27,7 +27,7 @@ class YouTubeSkipManager {
     this.observeVideoChanges();
     this.injectTranscriptInterceptor();
     this.setupMessageListener();
-    console.log('YouTube Smart Skip inizializzato');
+    console.log('YouTube Smart Skip initialized');
   }
 
   async loadSettings() {
@@ -38,11 +38,11 @@ class YouTubeSkipManager {
   }
 
   observeVideoChanges() {
-    // Osserva cambiamenti nel DOM per rilevare nuovo video
+    // Observe DOM changes to detect new video
     const observer = new MutationObserver(() => {
       const video = document.querySelector('video');
       const videoId = this.extractVideoId();
-      
+
       if (video && videoId && videoId !== this.currentVideoId) {
         this.handleNewVideo(video, videoId);
       }
@@ -53,7 +53,7 @@ class YouTubeSkipManager {
       subtree: true
     });
 
-    // Check iniziale
+    // Initial check
     const video = document.querySelector('video');
     const videoId = this.extractVideoId();
     if (video && videoId) {
@@ -70,38 +70,38 @@ class YouTubeSkipManager {
     this.video = video;
     this.currentVideoId = videoId;
     this.skipSegments = [];
-    this.timedtextWarningShown = false; // Reset flag per nuovo video
+    this.timedtextWarningShown = false; // Reset flag for new video
 
-    console.log(`Nuovo video rilevato: ${videoId}`);
+    console.log(`New video detected: ${videoId}`);
 
-    // Controlla cache locale
+    // Check local cache
     const cached = await this.getCachedAnalysis(videoId);
     if (cached) {
       this.skipSegments = cached;
       this.setupVideoMonitoring();
       this.displaySegments();
-      this.showNotification(`✅ ${cached.length} segmenti caricati dalla cache`, 'success');
-      console.log(`Caricati ${cached.length} segmenti dalla cache:`);
+      this.showNotification(`✅ ${cached.length} segments loaded from cache`, 'success');
+      console.log(`Loaded ${cached.length} segments from cache:`);
       cached.forEach((seg, i) => {
         console.log(`  ${i + 1}. [${seg.start}s - ${seg.end}s] ${seg.category}: ${seg.description}`);
       });
       return;
     }
 
-    // Aspetta che la pagina sia completamente caricata
+    // Wait for page to fully load
     await new Promise(r => setTimeout(r, 2000));
 
-    // Prova ad aprire automaticamente il pannello trascrizione per facilitare l'estrazione
+    // Try to automatically open transcript panel to facilitate extraction
     this.tryOpenTranscriptPanel();
 
-    // Avvia analisi
+    // Start analysis
     this.analyzeVideo(videoId);
     this.setupVideoMonitoring();
   }
 
   tryOpenTranscriptPanel() {
     try {
-      // Cerca il pulsante "Mostra trascrizione"
+      // Search for "Show transcript" button
       const transcriptButton = Array.from(document.querySelectorAll('button'))
         .find(btn => {
           const text = btn.textContent.toLowerCase();
@@ -109,39 +109,39 @@ class YouTubeSkipManager {
         });
 
       if (transcriptButton && !transcriptButton.getAttribute('aria-pressed')) {
-        console.log('Apertura automatica pannello trascrizione...');
+        console.log('Automatically opening transcript panel...');
         transcriptButton.click();
       }
     } catch (error) {
-      // Ignora errori, questo è solo un helper
+      // Ignore errors, this is just a helper
     }
   }
 
   setupVideoMonitoring() {
     if (!this.video) {
-      console.warn('⚠️ setupVideoMonitoring: video element non trovato');
+      console.warn('⚠️ setupVideoMonitoring: video element not found');
       return;
     }
 
-    // Unisci segmenti sovrapposti prima di iniziare il monitoraggio
+    // Merge overlapping segments before starting monitoring
     this.skipSegments = this.mergeOverlappingSegments(this.skipSegments);
 
-    console.log(`✓ Setup monitoraggio video con ${this.skipSegments.length} segmenti da saltare`);
+    console.log(`✓ Video monitoring setup with ${this.skipSegments.length} segments to skip`);
 
-    // Rimuovi listener precedenti
+    // Remove previous listeners
     this.video.removeEventListener('timeupdate', this.handleTimeUpdate);
 
-    // Aggiungi nuovo listener
+    // Add new listener
     this.handleTimeUpdate = this.handleTimeUpdate.bind(this);
     this.video.addEventListener('timeupdate', this.handleTimeUpdate);
 
-    console.log(`✓ Listener timeupdate aggiunto. AutoSkip: ${this.settings.autoSkip}`);
+    console.log(`✓ Timeupdate listener added. AutoSkip: ${this.settings.autoSkip}`);
   }
 
   mergeOverlappingSegments(segments) {
     if (segments.length <= 1) return segments;
 
-    // Ordina per tempo di inizio
+    // Sort by start time
     const sorted = segments.slice().sort((a, b) => a.start - b.start);
     const merged = [sorted[0]];
 
@@ -149,18 +149,18 @@ class YouTubeSkipManager {
       const current = sorted[i];
       const lastMerged = merged[merged.length - 1];
 
-      // Se il segmento corrente si sovrappone con l'ultimo unito
+      // If current segment overlaps with last merged
       if (current.start <= lastMerged.end) {
-        // Unisci estendendo l'end time al massimo
+        // Merge by extending end time to maximum
         lastMerged.end = Math.max(lastMerged.end, current.end);
-        // Combina le categorie
+        // Combine categories
         if (!lastMerged.category.includes(current.category)) {
           lastMerged.category += ` + ${current.category}`;
         }
         lastMerged.description += ` | ${current.description}`;
-        console.log(`🔗 Uniti segmenti sovrapposti: ${lastMerged.start}s-${lastMerged.end}s (${lastMerged.category})`);
+        console.log(`🔗 Merged overlapping segments: ${lastMerged.start}s-${lastMerged.end}s (${lastMerged.category})`);
       } else {
-        // Nessuna sovrapposizione, aggiungi come nuovo segmento
+        // No overlap, add as new segment
         merged.push(current);
       }
     }
@@ -173,19 +173,19 @@ class YouTubeSkipManager {
 
     const currentTime = this.video.currentTime;
 
-    // Controlla se siamo in un segmento da saltare
+    // Check if we're in a segment to skip
     for (const segment of this.skipSegments) {
       if (currentTime >= segment.start - this.settings.skipBuffer &&
           currentTime < segment.end) {
 
-        console.log(`⏩ Rilevato segmento da saltare a ${currentTime}s: ${segment.category} (${segment.start}s - ${segment.end}s)`);
+        console.log(`⏩ Detected segment to skip at ${currentTime}s: ${segment.category} (${segment.start}s - ${segment.end}s)`);
 
-        // Mostra preview se abilitato
+        // Show preview if enabled
         if (this.settings.enablePreview) {
           this.showSkipPreview(segment);
         }
 
-        // Esegui skip
+        // Perform skip
         this.performSkip(segment);
         break;
       }
@@ -195,12 +195,12 @@ class YouTubeSkipManager {
   performSkip(segment) {
     if (!this.video) return;
 
-    console.log(`⏩ Saltando: ${segment.category} (${segment.start}s - ${segment.end}s)`);
+    console.log(`⏩ Skipping: ${segment.category} (${segment.start}s - ${segment.end}s)`);
 
-    // Salva statistiche
+    // Save statistics
     this.updateStats(segment);
 
-    // Animazione fade se possibile
+    // Fade animation if possible
     this.video.style.transition = 'opacity 0.3s';
     this.video.style.opacity = '0.5';
 
@@ -209,12 +209,12 @@ class YouTubeSkipManager {
     setTimeout(() => {
       this.video.currentTime = newTime;
       this.video.style.opacity = '1';
-      this.showNotification(`⏩ Saltato: ${segment.category} (${Math.floor(segment.end - segment.start)}s risparmiati)`, 'success');
+      this.showNotification(`⏩ Skipped: ${segment.category} (${Math.floor(segment.end - segment.start)}s saved)`, 'success');
 
-      // Rimuovi tutti i segmenti che sono stati saltati o superati
-      // Questo previene skip multipli di segmenti sovrapposti
+      // Remove all segments that have been skipped or passed
+      // This prevents multiple skips of overlapping segments
       this.skipSegments = this.skipSegments.filter(s => s.end > newTime);
-      console.log(`✓ ${this.skipSegments.length} segmenti rimanenti da saltare`);
+      console.log(`✓ ${this.skipSegments.length} segments remaining to skip`);
     }, 300);
   }
 
@@ -233,10 +233,10 @@ class YouTubeSkipManager {
 
       chrome.storage.local.set({ stats }, () => {
         if (chrome.runtime.lastError) {
-          console.error('❌ Errore salvataggio statistiche:', chrome.runtime.lastError);
+          console.error('❌ Error saving statistics:', chrome.runtime.lastError);
         } else {
-          console.log(`📊 Statistiche salvate: ${Math.floor(stats.timeSaved)}s risparmiati, ${stats.segmentsSkipped} segmenti saltati`);
-          console.log('📊 Oggetto stats completo:', stats);
+          console.log(`📊 Statistics saved: ${Math.floor(stats.timeSaved)}s saved, ${stats.segmentsSkipped} segments skipped`);
+          console.log('📊 Complete stats object:', stats);
         }
       });
     });
@@ -247,11 +247,11 @@ class YouTubeSkipManager {
     preview.className = 'yss-skip-preview';
     preview.innerHTML = `
       <div class="yss-preview-content">
-        <span>⏩ Salto ${segment.category} in ${this.settings.skipBuffer}s</span>
-        <button class="yss-cancel-skip">Annulla</button>
+        <span>⏩ Skipping ${segment.category} in ${this.settings.skipBuffer}s</span>
+        <button class="yss-cancel-skip">Cancel</button>
       </div>
     `;
-    
+
     preview.style.cssText = `
       position: fixed;
       top: 80px;
@@ -263,55 +263,55 @@ class YouTubeSkipManager {
       z-index: 9999;
       font-family: Roboto, Arial, sans-serif;
     `;
-    
+
     document.body.appendChild(preview);
-    
-    // Gestisci annullamento
+
+    // Handle cancellation
     preview.querySelector('.yss-cancel-skip').onclick = () => {
       this.skipSegments = this.skipSegments.filter(s => s !== segment);
       preview.remove();
     };
-    
-    // Rimuovi dopo lo skip
+
+    // Remove after skip
     setTimeout(() => preview.remove(), this.settings.skipBuffer * 1000 + 500);
   }
 
   async analyzeVideo(videoId) {
     if (this.isAnalyzing) return;
 
-    // Controlla se il canale è nella whitelist
+    // Check if channel is in whitelist
     const isWhitelisted = await this.isChannelWhitelisted();
     if (isWhitelisted) {
-      console.log('⚪ Canale escluso dalla whitelist, skip analisi');
-      this.showNotification('ℹ️ Canale escluso dalle impostazioni avanzate', 'info');
+      console.log('⚪ Channel excluded from whitelist, skipping analysis');
+      this.showNotification('ℹ️ Channel excluded by advanced settings', 'info');
       this.isAnalyzing = false;
       return;
     }
 
     this.isAnalyzing = true;
-    this.showNotification('🔍 Analizzando video con IA...', 'info');
+    this.showNotification('🔍 Analyzing video with AI...', 'info');
 
     try {
-      // Ottieni trascrizione
+      // Get transcript
       const transcript = await this.getTranscript(videoId);
 
       if (!transcript || transcript.length === 0) {
-        console.warn('Trascrizione non disponibile, impossibile analizzare');
+        console.warn('Transcript not available, unable to analyze');
         this.showNotification(
-          '⚠️ Trascrizione non disponibile per questo video. L\'estensione funziona solo con video che hanno sottotitoli.',
+          '⚠️ Transcript not available for this video. The extension only works with videos that have subtitles.',
           'warning'
         );
         this.isAnalyzing = false;
         return;
       }
 
-      console.log(`✓ Trascrizione ottenuta: ${transcript.length} segmenti`);
-      this.showNotification(`✓ Trascrizione caricata: ${transcript.length} segmenti. Analizzando con IA...`, 'info');
+      console.log(`✓ Transcript obtained: ${transcript.length} segments`);
+      this.showNotification(`✓ Transcript loaded: ${transcript.length} segments. Analyzing with AI...`, 'info');
 
-      // Ottieni il titolo del video
-      const videoTitle = document.querySelector('h1.ytd-watch-metadata yt-formatted-string')?.textContent || 'Video YouTube';
+      // Get video title
+      const videoTitle = document.querySelector('h1.ytd-watch-metadata yt-formatted-string')?.textContent || 'YouTube Video';
 
-      // Invia a background per analisi IA
+      // Send to background for AI analysis
       const result = await chrome.runtime.sendMessage({
         action: 'analyzeTranscript',
         data: {
@@ -326,34 +326,30 @@ class YouTubeSkipManager {
         this.skipSegments = result.segments;
         await this.cacheAnalysis(videoId, result.segments);
 
-        // IMPORTANTE: Riconfigura il monitoraggio dopo aver assegnato i segmenti
+        // IMPORTANT: Reconfigure monitoring after assigning segments
         this.setupVideoMonitoring();
 
-        const message = result.fallback
-          ? `⚠️ IA non disponibile. L'estensione richiede una API key configurata.`
-          : `✅ Trovati ${result.segments.length} segmenti da saltare (analisi IA)!`;
-
-        this.showNotification(message, result.fallback ? 'warning' : 'success');
+        this.showNotification(`✅ Found ${result.segments.length} segments to skip (AI analysis)!`, 'success');
         this.displaySegments();
 
-        // Log dettagliato dei segmenti trovati
-        console.log('Segmenti da saltare:');
+        // Detailed log of found segments
+        console.log('Segments to skip:');
         result.segments.forEach((seg, i) => {
           console.log(`  ${i + 1}. [${seg.start}s - ${seg.end}s] ${seg.category}: ${seg.description}`);
         });
       } else if (result.success) {
-        this.showNotification('ℹ️ Nessun contenuto da saltare rilevato dall\'IA', 'info');
+        this.showNotification('ℹ️ No content to skip detected by AI', 'info');
       } else {
-        console.error('Errore analisi IA:', result.error);
+        console.error('AI analysis error:', result.error);
         this.showNotification(
-          `❌ Errore analisi IA: ${result.error}. Configura l'API key in background.js`,
+          `❌ AI analysis error: ${result.error}. Configure API key in background.js`,
           'error'
         );
       }
 
     } catch (error) {
-      console.error('Errore analisi:', error);
-      this.showNotification('❌ Errore durante l\'analisi', 'error');
+      console.error('Analysis error:', error);
+      this.showNotification('❌ Error during analysis', 'error');
     }
 
     this.isAnalyzing = false;
@@ -361,52 +357,52 @@ class YouTubeSkipManager {
   
 
   async getTranscript(videoId) {
-    // Prima controlla cache
+    // First check cache
     if (this.transcriptCache.has(videoId)) {
-      console.log('Trascrizione trovata in cache');
+      console.log('Transcript found in cache');
       return this.transcriptCache.get(videoId);
     }
 
-    console.log('Avvio estrazione trascrizione con metodi multipli...');
+    console.log('Starting transcript extraction with multiple methods...');
 
-    // Metodo 1: Estrai dal DOM (più affidabile)
-    console.log('Tentativo 1: Estrazione dal DOM...');
+    // Method 1: Extract from DOM (most reliable)
+    console.log('Attempt 1: Extracting from DOM...');
     const domTranscript = await this.extractTranscriptFromDOM();
     if (domTranscript && domTranscript.length > 0) {
-      console.log(`✓ Trascrizione estratta dal DOM: ${domTranscript.length} segmenti`);
+      console.log(`✓ Transcript extracted from DOM: ${domTranscript.length} segments`);
       this.transcriptCache.set(videoId, domTranscript);
       return domTranscript;
     }
 
-    // Metodo 2: Estrai dal player config
-    console.log('Tentativo 2: Estrazione dal player config...');
+    // Method 2: Extract from player config
+    console.log('Attempt 2: Extracting from player config...');
     const playerTranscript = await this.extractFromPlayerConfig(videoId);
     if (playerTranscript && playerTranscript.length > 0) {
-      console.log(`✓ Trascrizione estratta dal player config: ${playerTranscript.length} segmenti`);
+      console.log(`✓ Transcript extracted from player config: ${playerTranscript.length} segments`);
       this.transcriptCache.set(videoId, playerTranscript);
       return playerTranscript;
     }
 
-    // Metodo 3: Attendi trascrizione intercettata
-    console.log('Tentativo 3: Attesa trascrizione intercettata...');
+    // Method 3: Wait for intercepted transcript
+    console.log('Attempt 3: Waiting for intercepted transcript...');
     const interceptedTranscript = await this.waitForInterceptedTranscript();
     if (interceptedTranscript && interceptedTranscript.length > 0) {
-      console.log(`✓ Trascrizione intercettata: ${interceptedTranscript.length} segmenti`);
+      console.log(`✓ Intercepted transcript: ${interceptedTranscript.length} segments`);
       this.transcriptCache.set(videoId, interceptedTranscript);
       return interceptedTranscript;
     }
 
-    console.warn('⚠ Nessuna trascrizione disponibile per questo video');
+    console.warn('⚠ No transcript available for this video');
     return null;
   }
   
   async waitForInterceptedTranscript() {
     return new Promise((resolve) => {
       let timeout = setTimeout(() => {
-        console.log('⏱️ Timeout attesa trascrizione intercettata');
+        console.log('⏱️ Timeout waiting for intercepted transcript');
         resolve(null);
-      }, 10000); // Aumentato a 10 secondi
-      
+      }, 10000); // Increased to 10 seconds
+
       const messageHandler = (event) => {
         if (event.data && event.data.type === 'YSS_TRANSCRIPT') {
           clearTimeout(timeout);
@@ -415,40 +411,40 @@ class YouTubeSkipManager {
           resolve(transcript);
         }
       };
-      
+
       window.addEventListener('message', messageHandler);
     });
   }
   
   async extractFromPlayerConfig(videoId) {
     try {
-      console.log('Cercando ytInitialPlayerResponse...');
+      console.log('Searching for ytInitialPlayerResponse...');
 
-      // Metodo 1: Prova a leggere direttamente dalla finestra (più affidabile)
+      // Method 1: Try reading directly from window (most reliable)
       if (window.ytInitialPlayerResponse) {
-        console.log('✓ ytInitialPlayerResponse trovato nella finestra globale');
+        console.log('✓ ytInitialPlayerResponse found in global window');
         const result = await this.extractTranscriptFromPlayerResponse(window.ytInitialPlayerResponse);
         if (result) return result;
       }
 
-      // Metodo 2: Prova a ottenere ytInitialPlayerResponse dagli script tag
-      console.log('Cercando negli script tag...');
+      // Method 2: Try getting ytInitialPlayerResponse from script tags
+      console.log('Searching in script tags...');
       const scripts = document.querySelectorAll('script');
       for (const script of scripts) {
         const content = script.textContent;
         if (content && content.includes('ytInitialPlayerResponse')) {
           const match = content.match(/ytInitialPlayerResponse\s*=\s*({.+?});/);
           if (match) {
-            console.log('✓ ytInitialPlayerResponse trovato negli script');
+            console.log('✓ ytInitialPlayerResponse found in scripts');
             const playerResponse = JSON.parse(match[1]);
             return this.extractTranscriptFromPlayerResponse(playerResponse);
           }
         }
       }
 
-      console.log('ytInitialPlayerResponse non trovato');
+      console.log('ytInitialPlayerResponse not found');
     } catch (error) {
-      console.error('Errore estrazione dal player config:', error);
+      console.error('Error extracting from player config:', error);
     }
     return null;
   }
@@ -457,26 +453,26 @@ class YouTubeSkipManager {
     try {
       const captions = playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
       if (!captions || captions.length === 0) {
-        console.log('Nessuna traccia caption trovata in playerResponse');
+        console.log('No caption track found in playerResponse');
         return null;
       }
 
-      // Trova la traccia italiana o inglese
+      // Find Italian or English track
       let captionTrack = captions.find(c => c.languageCode === 'it') ||
                          captions.find(c => c.languageCode === 'en') ||
                          captions[0];
 
       if (captionTrack && captionTrack.baseUrl) {
-        // Mostra il warning solo una volta per video
+        // Show warning only once per video
         if (!this.timedtextWarningShown) {
-          console.log(`Traccia sottotitoli trovata (${captionTrack.languageCode}):`, captionTrack.baseUrl);
-          console.warn('⚠️ L\'API timedtext di YouTube non è accessibile da estensioni (restituisce content-length: 0)');
-          console.log('💡 Usa l\'estrazione DOM invece - apri manualmente il pannello trascrizione se necessario');
+          console.log(`Subtitle track found (${captionTrack.languageCode}):`, captionTrack.baseUrl);
+          console.warn('⚠️ YouTube\'s timedtext API is not accessible from extensions (returns content-length: 0)');
+          console.log('💡 Use DOM extraction instead - manually open transcript panel if necessary');
           this.timedtextWarningShown = true;
         }
       }
     } catch (error) {
-      console.error('Errore estrazione trascrizione dal player response:', error);
+      console.error('Error extracting transcript from player response:', error);
     }
     return null;
   }
@@ -493,107 +489,53 @@ class YouTubeSkipManager {
           }));
       }
     } catch (error) {
-      console.error('Errore parsing trascrizione:', error);
+      console.error('Error parsing transcript:', error);
     }
     return null;
   }
 
-  parseXMLTranscript(xmlString) {
-    try {
-      const parser = new DOMParser();
-      const xmlDoc = parser.parseFromString(xmlString, 'text/xml');
-
-      // Controlla errori di parsing
-      if (xmlDoc.querySelector('parsererror')) {
-        console.error('Errore parsing XML');
-        return null;
-      }
-
-      const textElements = xmlDoc.querySelectorAll('text');
-      if (textElements.length === 0) {
-        console.warn('Nessun elemento text trovato nell\'XML');
-        return null;
-      }
-
-      const transcript = [];
-      textElements.forEach(textEl => {
-        const start = parseFloat(textEl.getAttribute('start') || '0');
-        const dur = parseFloat(textEl.getAttribute('dur') || '5');
-        const text = textEl.textContent || '';
-
-        if (text.trim()) {
-          transcript.push({
-            text: text.trim(),
-            start: start,
-            duration: dur
-          });
-        }
-      });
-
-      console.log(`✓ Parsed ${transcript.length} segmenti da XML`);
-      return transcript;
-    } catch (error) {
-      console.error('Errore parsing XML trascrizione:', error);
-      return null;
-    }
-  }
-
-  parseTranscript(data) {
-    if (!data.events) return null;
-    
-    const transcript = data.events
-      .filter(event => event.segs)
-      .map(event => ({
-        text: event.segs.map(seg => seg.utf8).join(''),
-        start: event.tStartMs / 1000,
-        duration: event.dDurationMs / 1000
-      }));
-    
-    this.transcriptCache.set(this.currentVideoId, transcript);
-    return transcript;
-  }
 
   async extractTranscriptFromDOM() {
     try {
-      console.log('🔍 Cercando pannello trascrizione nel DOM...');
+      console.log('🔍 Searching for transcript panel in DOM...');
 
-      // Helper function per estrarre segmenti
+      // Helper function to extract segments
       const extractSegments = () => {
-        // Cerca entrambe le varianti del selettore
+        // Search for both selector variants
         const transcriptPanel = document.querySelector(
           'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"],' +
           'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-transcript"]'
         );
 
         if (!transcriptPanel) {
-          console.log('⚠️ Pannello trascrizione non trovato nel DOM');
+          console.log('⚠️ Transcript panel not found in DOM');
           return null;
         }
 
-        console.log('✓ Pannello trascrizione trovato:', transcriptPanel.getAttribute('target-id'));
+        console.log('✓ Transcript panel found:', transcriptPanel.getAttribute('target-id'));
 
-        // Prova con selettori multipli per maggiore compatibilità
+        // Try multiple selectors for better compatibility
         let segments = transcriptPanel.querySelectorAll('ytd-transcript-segment-renderer');
 
-        // Se non trova nulla, prova selettori alternativi
+        // If nothing found, try alternative selectors
         if (segments.length === 0) {
           segments = transcriptPanel.querySelectorAll('[class*="segment"]');
         }
 
         if (segments.length === 0) {
-          console.log('⚠️ Nessun elemento segmento trovato nel pannello');
+          console.log('⚠️ No segment element found in panel');
           return null;
         }
 
-        console.log(`Trovati ${segments.length} elementi segmento nel pannello`);
+        console.log(`Found ${segments.length} segment elements in panel`);
 
         const transcript = [];
         segments.forEach((segment, index) => {
-          // Prova selettori multipli per timestamp e testo
+          // Try multiple selectors for timestamp and text
           let timeElement = segment.querySelector('.segment-timestamp, [class*="timestamp"]');
           let textElement = segment.querySelector('.segment-text, [class*="segment-text"], [class*="cue-text"]');
 
-          // Se non trova con classi, prova con tag
+          // If not found with classes, try with tags
           if (!timeElement) {
             timeElement = segment.querySelector('div[role="button"]');
           }
@@ -615,8 +557,8 @@ class YouTubeSkipManager {
               });
             }
           } else {
-            if (index < 5) { // Log solo i primi 5 per non spammare
-              console.log(`Segmento ${index}: timeElement=${!!timeElement}, textElement=${!!textElement}`);
+            if (index < 5) { // Log only first 5 to avoid spam
+              console.log(`Segment ${index}: timeElement=${!!timeElement}, textElement=${!!textElement}`);
             }
           }
         });
@@ -624,16 +566,16 @@ class YouTubeSkipManager {
         return transcript.length > 0 ? transcript : null;
       };
 
-      // Metodo 1: Cerca direttamente nel DOM se il pannello è già aperto
+      // Method 1: Search directly in DOM if panel is already open
       let transcript = extractSegments();
       if (transcript && transcript.length > 0) {
-        console.log(`✓ Pannello già aperto - Estratti ${transcript.length} segmenti`);
+        console.log(`✓ Panel already open - Extracted ${transcript.length} segments`);
         return transcript;
       }
 
-      console.log('Pannello non aperto, cercando pulsante...');
+      console.log('Panel not open, searching for button...');
 
-      // Metodo 2: Cerca e clicca il pulsante trascrizione
+      // Method 2: Search and click transcript button
       const buttons = Array.from(document.querySelectorAll('button'));
       const transcriptButton = buttons.find(btn => {
         const text = btn.textContent.toLowerCase();
@@ -643,62 +585,62 @@ class YouTubeSkipManager {
       });
 
       if (transcriptButton) {
-        console.log('✓ Pulsante trascrizione trovato, click...');
+        console.log('✓ Transcript button found, clicking...');
         transcriptButton.click();
 
-        // Aspetta che il pannello si apra e prova più volte con attese più lunghe
-        console.log('Attesa caricamento segmenti...');
+        // Wait for panel to open and try multiple times with longer waits
+        console.log('Waiting for segments to load...');
         for (let i = 0; i < 10; i++) {
           await new Promise(r => setTimeout(r, 800));
 
-          // Verifica che il pannello sia visibile
+          // Verify panel is visible
           const panel = document.querySelector(
             'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"],' +
             'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-transcript"]'
           );
           if (panel) {
             const isVisible = panel.offsetParent !== null;
-            console.log(`Tentativo ${i + 1}: Pannello ${isVisible ? 'visibile' : 'non visibile'}`);
+            console.log(`Attempt ${i + 1}: Panel ${isVisible ? 'visible' : 'not visible'}`);
 
             transcript = extractSegments();
             if (transcript && transcript.length > 0) {
-              console.log(`✅ Estratti ${transcript.length} segmenti dopo apertura pannello (tentativo ${i + 1})`);
+              console.log(`✅ Extracted ${transcript.length} segments after opening panel (attempt ${i + 1})`);
               return transcript;
             }
 
-            // Verifica se ci sono elementi di loading
+            // Check if there are loading elements
             const loading = panel.querySelector('tp-yt-paper-spinner, ytd-continuation-item-renderer');
             if (loading) {
-              console.log('⏳ Caricamento in corso...');
+              console.log('⏳ Loading in progress...');
             }
           }
         }
-        console.warn('⚠️ Pannello aperto ma nessun segmento trovato dopo 10 tentativi');
+        console.warn('⚠️ Panel open but no segments found after 10 attempts');
 
-        // Debug: mostra cosa c'è nel pannello
+        // Debug: show what's in the panel
         const panel = document.querySelector(
           'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"],' +
           'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-transcript"]'
         );
         if (panel) {
-          console.log('Debug pannello HTML:', panel.innerHTML.substring(0, 500));
+          console.log('Debug panel HTML:', panel.innerHTML.substring(0, 500));
         }
       } else {
-        console.log('⚠️ Pulsante trascrizione non trovato nel DOM');
+        console.log('⚠️ Transcript button not found in DOM');
       }
 
-      console.log('❌ Nessun metodo DOM ha funzionato');
-      console.log('💡 Suggerimento: Apri manualmente il pannello trascrizione e ricarica la pagina');
+      console.log('❌ No DOM method worked');
+      console.log('💡 Suggestion: Manually open the transcript panel and reload the page');
 
     } catch (error) {
-      console.error('Errore estrazione trascrizione dal DOM:', error);
+      console.error('Error extracting transcript from DOM:', error);
     }
 
     return null;
   }
   
   parseTimeString(timeStr) {
-    // Converte "1:23" o "1:23:45" in secondi
+    // Convert "1:23" or "1:23:45" to seconds
     const parts = timeStr.trim().split(':').map(p => parseInt(p));
     if (parts.length === 2) {
       return parts[0] * 60 + parts[1];
@@ -709,7 +651,7 @@ class YouTubeSkipManager {
   }
 
   displaySegments() {
-    // Rimuovi marker precedenti
+    // Remove previous markers
     document.querySelectorAll('.yss-segment-marker').forEach(m => m.remove());
     document.querySelectorAll('.yss-segment-tooltip').forEach(t => t.remove());
 
@@ -718,14 +660,14 @@ class YouTubeSkipManager {
 
     const duration = this.video.duration;
     if (!duration || duration === 0) {
-      console.warn('⚠️ Durata video non disponibile, impossibile mostrare timeline');
+      console.warn('⚠️ Video duration not available, unable to show timeline');
       return;
     }
 
-    console.log(`🎨 Visualizzando ${this.skipSegments.length} segmenti sulla timeline`);
+    console.log(`🎨 Displaying ${this.skipSegments.length} segments on timeline`);
 
     this.skipSegments.forEach((segment, index) => {
-      // Colori per categoria
+      // Colors by category
       const colors = {
         'Sponsor': '#FF0000',
         'Autopromo': '#FF8800',
@@ -735,8 +677,8 @@ class YouTubeSkipManager {
         'Ringraziamenti': '#00FF00'
       };
 
-      // Trova il colore della categoria principale
-      let color = '#FF0000'; // Default rosso
+      // Find main category color
+      let color = '#FF0000'; // Default red
       for (const [cat, col] of Object.entries(colors)) {
         if (segment.category.includes(cat)) {
           color = col;
@@ -744,11 +686,11 @@ class YouTubeSkipManager {
         }
       }
 
-      // Calcola posizione e larghezza
+      // Calculate position and width
       const left = (segment.start / duration) * 100;
       const width = ((segment.end - segment.start) / duration) * 100;
 
-      // Crea il marker
+      // Create marker
       const marker = document.createElement('div');
       marker.className = 'yss-segment-marker';
       marker.dataset.index = index;
@@ -764,7 +706,7 @@ class YouTubeSkipManager {
         transition: opacity 0.2s;
       `;
 
-      // Hover per mostrare tooltip
+      // Hover to show tooltip
       marker.addEventListener('mouseenter', (e) => {
         marker.style.opacity = '0.9';
         this.showSegmentTooltip(segment, e);
@@ -775,12 +717,12 @@ class YouTubeSkipManager {
         this.hideSegmentTooltip();
       });
 
-      // Click per saltare al segmento
+      // Click to skip to segment
       marker.addEventListener('click', (e) => {
         e.stopPropagation();
         if (this.video) {
           this.video.currentTime = segment.end;
-          this.showNotification(`⏩ Saltato manualmente: ${segment.category}`, 'info');
+          this.showNotification(`⏩ Skipped manually: ${segment.category}`, 'info');
         }
       });
 
@@ -789,7 +731,7 @@ class YouTubeSkipManager {
   }
 
   showSegmentTooltip(segment, event) {
-    // Rimuovi tooltip esistente
+    // Remove existing tooltip
     this.hideSegmentTooltip();
 
     const tooltip = document.createElement('div');
@@ -805,7 +747,7 @@ class YouTubeSkipManager {
         ${segment.description}
       </div>
       <div style="font-size: 10px; margin-top: 6px; opacity: 0.7; font-style: italic;">
-        Click per saltare
+        Click to skip
       </div>
     `;
 
@@ -826,7 +768,7 @@ class YouTubeSkipManager {
 
     document.body.appendChild(tooltip);
 
-    // Posiziona il tooltip vicino al cursore
+    // Position tooltip near cursor
     const rect = event.target.getBoundingClientRect();
     tooltip.style.left = `${rect.left + rect.width / 2 - tooltip.offsetWidth / 2}px`;
     tooltip.style.bottom = `${window.innerHeight - rect.top + 10}px`;
@@ -890,21 +832,17 @@ class YouTubeSkipManager {
         this.saveSettings();
       }
       if (request.action === 'updateAdvancedSettings') {
-        // Aggiorna skipBuffer dalle impostazioni avanzate
+        // Update skipBuffer from advanced settings
         if (request.advancedSettings && request.advancedSettings.skipBuffer !== undefined) {
           this.settings.skipBuffer = request.advancedSettings.skipBuffer;
-          console.log('⚙️ Skip buffer aggiornato:', this.settings.skipBuffer);
+          console.log('⚙️ Skip buffer updated:', this.settings.skipBuffer);
         }
       }
       if (request.action === 'manualAnalyze') {
         this.analyzeVideo(this.currentVideoId);
       }
-      if (request.action === 'toggleAutoSkip') {
-        this.settings.autoSkip = !this.settings.autoSkip;
-        this.saveSettings();
-      }
       if (request.action === 'getCurrentChannel') {
-        // Ottieni informazioni sul canale corrente
+        // Get current channel information
         const channelLinkElement = document.querySelector('ytd-channel-name a');
         if (channelLinkElement) {
           const channelHandle = channelLinkElement.textContent?.trim();
@@ -919,7 +857,7 @@ class YouTubeSkipManager {
         } else {
           sendResponse({ channelName: null });
         }
-        return true; // Mantieni il canale aperto per sendResponse asincrono
+        return true; // Keep channel open for async sendResponse
       }
     });
   }
@@ -930,24 +868,24 @@ class YouTubeSkipManager {
 
   async isChannelWhitelisted() {
     try {
-      // Ottieni il nome/ID del canale corrente
+      // Get current channel name/ID
       const channelLinkElement = document.querySelector('ytd-channel-name a');
       if (!channelLinkElement) {
-        console.log('⚠️ Elemento canale non trovato');
+        console.log('⚠️ Channel element not found');
         return false;
       }
 
       const channelHandle = channelLinkElement.textContent?.trim();
       const channelUrl = channelLinkElement.href;
-      const channelId = channelUrl?.split('/').pop(); // Es: @NomeCanale o UCxxxxxx
+      const channelId = channelUrl?.split('/').pop(); // Ex: @ChannelName or UCxxxxxx
 
-      console.log('📺 Canale corrente:', { channelHandle, channelId });
+      console.log('📺 Current channel:', { channelHandle, channelId });
 
-      // Carica la whitelist dalle impostazioni avanzate
+      // Load whitelist from advanced settings
       const data = await chrome.storage.local.get(['advancedSettings']);
       const whitelist = data.advancedSettings?.channelWhitelist || [];
 
-      // Controlla se il canale è nella whitelist (per handle o ID)
+      // Check if channel is in whitelist (by handle or ID)
       const isWhitelisted = whitelist.some(item => {
         return item === channelHandle ||
                item === channelId ||
@@ -956,105 +894,22 @@ class YouTubeSkipManager {
       });
 
       if (isWhitelisted) {
-        console.log('✓ Canale trovato nella whitelist:', channelHandle || channelId);
+        console.log('✓ Channel found in whitelist:', channelHandle || channelId);
       }
 
       return isWhitelisted;
     } catch (error) {
-      console.error('❌ Errore controllo whitelist:', error);
+      console.error('❌ Error checking whitelist:', error);
       return false;
     }
   }
 
   injectTranscriptInterceptor() {
-    // Non iniettare script inline a causa della CSP
-    // Invece, osserviamo le performance entries per le richieste di rete
-    console.log('YouTube Smart Skip: Monitoraggio richieste sottotitoli...');
-    
-    // Monitora le richieste usando PerformanceObserver se disponibile
-    if (window.PerformanceObserver) {
-      const observer = new PerformanceObserver((list) => {
-        for (const entry of list.getEntries()) {
-          if (entry.name && (entry.name.includes('timedtext') || entry.name.includes('caption'))) {
-            console.log('Richiesta sottotitoli rilevata:', entry.name);
-            // Prova a fare fetch dell'URL
-            this.fetchTranscriptFromUrl(entry.name);
-          }
-        }
-      });
-      
-      try {
-        observer.observe({ entryTypes: ['resource'] });
-      } catch (e) {
-        console.log('PerformanceObserver non supportato per resource entries');
-      }
-    }
-    
-    // Metodo alternativo: periodicamente controlla se ci sono nuovi elementi script con ytInitialPlayerResponse
-    this.checkForPlayerResponse();
-  }
-  
-  checkForPlayerResponse() {
-    const interval = setInterval(() => {
-      if (this.transcriptCache.has(this.currentVideoId)) {
-        clearInterval(interval);
-        return;
-      }
-      
-      const scripts = document.querySelectorAll('script');
-      for (const script of scripts) {
-        const content = script.textContent;
-        if (content && content.includes('ytInitialPlayerResponse')) {
-          const match = content.match(/ytInitialPlayerResponse\s*=\s*({.+?});/);
-          if (match) {
-            try {
-              const playerResponse = JSON.parse(match[1]);
-              this.extractTranscriptFromPlayerResponse(playerResponse).then(transcript => {
-                if (transcript) {
-                  clearInterval(interval);
-                  console.log('Trascrizione estratta dal player response');
-                }
-              });
-            } catch (e) {
-              console.error('Errore parsing player response:', e);
-            }
-          }
-        }
-      }
-    }, 2000);
-    
-    // Ferma dopo 30 secondi
-    setTimeout(() => clearInterval(interval), 30000);
-  }
-  
-  async fetchTranscriptFromUrl(url) {
-    try {
-      if (!url.includes('fmt=json')) {
-        url += '&fmt=json3';
-      }
-
-      // Usa il background service worker per scaricare i sottotitoli (bypassa CORS)
-      const result = await chrome.runtime.sendMessage({
-        action: 'fetchTranscript',
-        url: url
-      });
-
-      if (result.success && result.data) {
-        const transcript = this.parseYouTubeTranscript(result.data);
-        if (transcript && transcript.length > 0) {
-          this.transcriptCache.set(this.currentVideoId, transcript);
-          console.log('Trascrizione scaricata con successo tramite background service worker');
-        }
-      } else {
-        console.warn('Errore fetch trascrizione:', result.error);
-      }
-    } catch (error) {
-      console.error('Errore comunicazione con background script:', error);
-    }
+    console.log('YouTube Smart Skip: Transcript interceptor initialized');
   }
 }
 
-// Stili CSS
+// CSS Styles
 const style = document.createElement('style');
 style.textContent = `
   @keyframes slideIn {
@@ -1067,7 +922,7 @@ style.textContent = `
       opacity: 1;
     }
   }
-  
+
   .yss-cancel-skip {
     margin-left: 10px;
     padding: 5px 10px;
@@ -1077,14 +932,14 @@ style.textContent = `
     border-radius: 4px;
     cursor: pointer;
   }
-  
+
   .yss-cancel-skip:hover {
     background: rgba(255, 255, 255, 0.3);
   }
 `;
 document.head.appendChild(style);
 
-// Inizializza quando la pagina è pronta
+// Initialize when page is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => new YouTubeSkipManager());
 } else {

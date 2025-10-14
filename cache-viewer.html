@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -395,16 +395,16 @@
     <div class="header">
       <h1>
         <span class="material-icons">view_list</span>
-        <span>Cache Video Analizzati</span>
+        <span>Analyzed Video Cache</span>
       </h1>
       <div class="header-actions">
         <button class="btn" id="refresh-btn">
           <span class="material-icons">refresh</span>
-          Aggiorna
+          Refresh
         </button>
         <button class="btn danger" id="clear-all-btn">
           <span class="material-icons">delete_forever</span>
-          Cancella Tutto
+          Clear All
         </button>
       </div>
     </div>
@@ -413,19 +413,19 @@
     <div class="stats-bar">
       <div class="stat-card">
         <div class="stat-value" id="total-videos">0</div>
-        <div class="stat-label">Video in Cache</div>
+        <div class="stat-label">Cached Videos</div>
       </div>
       <div class="stat-card">
         <div class="stat-value" id="total-segments">0</div>
-        <div class="stat-label">Segmenti Totali</div>
+        <div class="stat-label">Total Segments</div>
       </div>
       <div class="stat-card">
         <div class="stat-value" id="cache-size">0 KB</div>
-        <div class="stat-label">Dimensione Cache</div>
+        <div class="stat-label">Cache Size</div>
       </div>
       <div class="stat-card">
         <div class="stat-value" id="total-time">0m</div>
-        <div class="stat-label">Tempo Analizzato</div>
+        <div class="stat-label">Analyzed Time</div>
       </div>
     </div>
 
@@ -433,7 +433,7 @@
     <div class="filters">
       <div class="search-wrapper">
         <span class="material-icons search-icon">search</span>
-        <input type="text" id="search-input" placeholder="Cerca per ID video...">
+        <input type="text" id="search-input" placeholder="Search by video ID...">
       </div>
     </div>
 
@@ -441,7 +441,7 @@
     <div class="video-list" id="video-list">
       <div class="loading">
         <span class="material-icons">hourglass_empty</span>
-        Caricamento cache...
+        Loading cache...
       </div>
     </div>
   </div>

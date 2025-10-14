@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "SkipTube AI",
   "version": "1.0.0",
-  "description": "Salta automaticamente sponsorizzazioni e contenuti non rilevanti nei video YouTube usando l'IA",
+  "description": "Automatically skip sponsorships and irrelevant content in YouTube videos using AI",
   "permissions": [
     "storage",
     "activeTab"
@@ -24,11 +24,5 @@
   ],
   "action": {
     "default_popup": "popup.html"
-  },
-  "web_accessible_resources": [
-    {
-      "resources": ["inject.js"],
-      "matches": ["https://www.youtube.com/*"]
-    }
-  ]
+  }
 }

@@ -1,7 +1,7 @@
-// cache-viewer.js - Script per la pagina di visualizzazione cache
+// cache-viewer.js - Script for cache viewer page
 let cacheData = [];
 
-// Carica cache all'avvio
+// Load cache on startup
 loadCache();
 
 // Event listeners
@@ -16,18 +16,18 @@ function loadCache() {
     let totalTime = 0;
     let cacheSize = 0;
 
-    console.log('📋 Caricamento cache...', items);
+    console.log('📋 Loading cache...', items);
 
     Object.keys(items).forEach(key => {
       if (key.startsWith('analysis_')) {
         const videoId = key.replace('analysis_', '');
         const segments = items[key];
 
-        // Valida che sia un array con segmenti
+        // Validate that it's an array with segments
         if (Array.isArray(segments) && segments.length > 0) {
           totalSegments += segments.length;
 
-          // Calcola tempo totale dei segmenti
+          // Calculate total time of segments
           segments.forEach(seg => {
             totalTime += (seg.end - seg.start);
           });
@@ -35,29 +35,29 @@ function loadCache() {
           cacheData.push({
             videoId,
             segments,
-            timestamp: Date.now() // Potremmo salvare il timestamp reale
+            timestamp: Date.now() // Could save real timestamp
           });
 
-          // Stima dimensione cache
+          // Estimate cache size
           cacheSize += JSON.stringify(segments).length;
         } else {
-          console.warn(`⚠️ Chiave cache invalida o vuota: ${key}`, segments);
+          console.warn(`⚠️ Invalid or empty cache key: ${key}`, segments);
         }
       }
     });
 
-    console.log(`✓ Trovati ${cacheData.length} video validi in cache`);
+    console.log(`✓ Found ${cacheData.length} valid videos in cache`);
 
-    // Ordina per timestamp (più recenti prima)
+    // Sort by timestamp (most recent first)
     cacheData.sort((a, b) => b.timestamp - a.timestamp);
 
-    // Aggiorna statistiche
+    // Update statistics
     document.getElementById('total-videos').textContent = cacheData.length;
     document.getElementById('total-segments').textContent = totalSegments;
     document.getElementById('cache-size').textContent = formatBytes(cacheSize);
     document.getElementById('total-time').textContent = formatTime(totalTime);
 
-    // Renderizza lista
+    // Render list
     renderVideoList(cacheData);
   });
 }
@@ -69,8 +69,8 @@ function renderVideoList(videos) {
     container.innerHTML = `
       <div class="empty-state">
         <div class="empty-state-icon">📭</div>
-        <h2>Nessun video in cache</h2>
-        <p>I video analizzati appariranno qui dopo la prima analisi</p>
+        <h2>No videos in cache</h2>
+        <p>Analyzed videos will appear here after the first analysis</p>
       </div>
     `;
     return;
@@ -82,14 +82,14 @@ function renderVideoList(videos) {
         <div class="video-info">
           <div class="video-id">📹 ${video.videoId}</div>
           <div style="font-size: 14px; opacity: 0.8;">
-            ${video.segments.length} segmenti rilevati
+            ${video.segments.length} segments detected
           </div>
         </div>
         <div class="video-actions">
-          <button class="icon-btn" onclick="openVideo('${video.videoId}')" title="Apri su YouTube">
+          <button class="icon-btn" onclick="openVideo('${video.videoId}')" title="Open on YouTube">
             🔗
           </button>
-          <button class="icon-btn danger" onclick="deleteVideo('${video.videoId}')" title="Rimuovi dalla cache">
+          <button class="icon-btn danger" onclick="deleteVideo('${video.videoId}')" title="Remove from cache">
             🗑️
           </button>
         </div>
@@ -108,7 +108,7 @@ function renderVideoList(videos) {
       </div>
 
       <div class="segment-details">
-        Tempo totale da saltare: <strong>${formatTime(video.segments.reduce((sum, s) => sum + (s.end - s.start), 0))}</strong>
+        Total time to skip: <strong>${formatTime(video.segments.reduce((sum, s) => sum + (s.end - s.start), 0))}</strong>
       </div>
     </div>
   `).join('');
@@ -117,11 +117,11 @@ function renderVideoList(videos) {
 function getCategoryInfo(category) {
   const categories = {
     'Sponsor': { icon: '📢', class: 'sponsor' },
-    'Autopromo': { icon: '📣', class: 'autopromo' },
+    'Self-Promo': { icon: '📣', class: 'autopromo' },
     'Intro': { icon: '🎬', class: 'intro' },
     'Outro': { icon: '👋', class: 'outro' },
-    'Donazioni': { icon: '💰', class: 'donations' },
-    'Ringraziamenti': { icon: '🙏', class: 'donations' }
+    'Donations': { icon: '💰', class: 'donations' },
+    'Acknowledgments': { icon: '🙏', class: 'donations' }
   };
 
   return categories[category] || { icon: '📌', class: 'sponsor' };
@@ -140,7 +140,7 @@ function openVideo(videoId) {
 }
 
 function deleteVideo(videoId) {
-  if (confirm(`Rimuovere il video ${videoId} dalla cache?`)) {
+  if (confirm(`Remove video ${videoId} from cache?`)) {
     chrome.storage.local.remove(`analysis_${videoId}`, () => {
       loadCache();
     });
@@ -148,11 +148,11 @@ function deleteVideo(videoId) {
 }
 
 function clearAllCache() {
-  if (confirm(`⚠️ ATTENZIONE\n\nCancellare TUTTI i ${cacheData.length} video dalla cache?\n\nQuesta azione non può essere annullata.`)) {
+  if (confirm(`⚠️ WARNING\n\nDelete ALL ${cacheData.length} videos from cache?\n\nThis action cannot be undone.`)) {
     const keys = cacheData.map(v => `analysis_${v.videoId}`);
     chrome.storage.local.remove(keys, () => {
       loadCache();
-      alert(`✓ ${keys.length} video rimossi dalla cache!`);
+      alert(`✓ ${keys.length} videos removed from cache!`);
     });
   }
 }

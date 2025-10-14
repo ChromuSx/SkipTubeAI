@@ -1,15 +1,15 @@
-// popup.js - Script per il popup dell'estensione
+// popup.js - Extension popup script
 let currentVideoId = null;
-let isLoadingSettings = true; // Flag per evitare salvataggi durante il caricamento
+let isLoadingSettings = true; // Flag to prevent saves during loading
 
-// Carica impostazioni salvate
+// Load saved settings
 chrome.storage.local.get(['settings', 'stats', 'advancedSettings'], (data) => {
-  console.log('📊 Dati caricati dal popup:', data);
+  console.log('📊 Data loaded from popup:', data);
 
-  // Usa i valori salvati, oppure i default se non esistono
+  // Use saved values, or defaults if they don't exist
   const settings = data.settings || {};
 
-  // Helper: usa default=true solo se undefined
+  // Helper: use default=true only if undefined
   const getDefault = (val) => val === undefined ? true : val;
 
   document.getElementById('skip-sponsors').checked = getDefault(settings.skipSponsors);
@@ -21,7 +21,7 @@ chrome.storage.local.get(['settings', 'stats', 'advancedSettings'], (data) => {
 
   updateStatus(getDefault(settings.autoSkip));
 
-  console.log('✓ Impostazioni UI aggiornate:', {
+  console.log('✓ UI settings updated:', {
     skipSponsors: document.getElementById('skip-sponsors').checked,
     skipIntros: document.getElementById('skip-intros').checked,
     skipOutros: document.getElementById('skip-outros').checked,
@@ -30,7 +30,7 @@ chrome.storage.local.get(['settings', 'stats', 'advancedSettings'], (data) => {
     autoSkip: document.getElementById('master-toggle').checked
   });
 
-  // Carica impostazioni avanzate
+  // Load advanced settings
   const advSettings = data.advancedSettings || {
     confidenceThreshold: 0.85,
     aiModel: 'haiku',
@@ -40,52 +40,52 @@ chrome.storage.local.get(['settings', 'stats', 'advancedSettings'], (data) => {
   loadAdvancedSettings(advSettings);
 
   if (data.stats) {
-    console.log('✓ Statistiche trovate:', data.stats);
+    console.log('✓ Statistics found:', data.stats);
     updateStats(data.stats);
   } else {
-    console.log('⚠️ Nessuna statistica trovata in storage');
+    console.log('⚠️ No statistics found in storage');
   }
 
-  // loadCacheInfo deve essere chiamato DOPO updateStats per sovrascrivere videosAnalyzed
+  // loadCacheInfo must be called AFTER updateStats to override videosAnalyzed
   loadCacheInfo();
   loadCurrentVideoInfo();
 
-  // Sblocca i salvataggi dopo che tutto è stato caricato
+  // Unlock saves after everything is loaded
   setTimeout(() => {
     isLoadingSettings = false;
-    console.log('✓ Caricamento completato - eventi abilitati');
+    console.log('✓ Loading completed - events enabled');
   }, 100);
 });
 
-// Gestori eventi
+// Event handlers
 document.getElementById('master-toggle').addEventListener('change', (e) => {
   if (isLoadingSettings) {
-    console.log('⏳ Caricamento in corso - evento ignorato');
+    console.log('⏳ Loading in progress - event ignored');
     return;
   }
   const isActive = e.target.checked;
-  console.log('✓ Master toggle cambiato:', isActive);
+  console.log('✓ Master toggle changed:', isActive);
   updateStatus(isActive);
   saveSettings();
 });
 
-// Gestori per ogni checkbox - usa 'click' invece di 'change' per catturare anche i click sul label
+// Handlers for each checkbox - use 'click' instead of 'change' to also capture clicks on the label
 ['skip-sponsors', 'skip-intros', 'skip-outros', 'skip-donations', 'skip-selfpromo']
   .forEach(id => {
     const checkbox = document.getElementById(id);
     checkbox.addEventListener('change', () => {
       if (isLoadingSettings) {
-        console.log('⏳ Caricamento in corso - evento ignorato');
+        console.log('⏳ Loading in progress - event ignored');
         return;
       }
-      console.log(`✓ Checkbox ${id} cambiato:`, checkbox.checked);
+      console.log(`✓ Checkbox ${id} changed:`, checkbox.checked);
       saveSettings();
     });
   });
 
 document.getElementById('manual-analyze').addEventListener('click', () => {
   if (currentVideoId) {
-    // Cancella cache del video corrente e rianalizzi
+    // Clear current video cache and reanalyze
     chrome.storage.local.remove(`analysis_${currentVideoId}`, () => {
       sendMessage('manualAnalyze');
       setTimeout(() => window.close(), 500);
@@ -95,35 +95,35 @@ document.getElementById('manual-analyze').addEventListener('click', () => {
 
 document.getElementById('view-cache').addEventListener('click', () => {
   const url = chrome.runtime.getURL('cache-viewer.html');
-  console.log('Apertura cache viewer:', url);
+  console.log('Opening cache viewer:', url);
   chrome.tabs.create({ url: url }, (tab) => {
     if (chrome.runtime.lastError) {
-      console.error('Errore apertura cache viewer:', chrome.runtime.lastError);
-      showToast('Errore apertura pagina cache: ' + chrome.runtime.lastError.message, 'error');
+      console.error('Error opening cache viewer:', chrome.runtime.lastError);
+      showToast('Error opening cache page: ' + chrome.runtime.lastError.message, 'error');
     }
   });
 });
 
 document.getElementById('clear-current-cache').addEventListener('click', () => {
   if (!currentVideoId) {
-    showToast('Nessun video YouTube attivo nella tab corrente', 'warning');
+    showToast('No active YouTube video in current tab', 'warning');
     return;
   }
 
-  if (confirm('Cancellare la cache per questo video?')) {
+  if (confirm('Clear cache for this video?')) {
     chrome.storage.local.remove(`analysis_${currentVideoId}`, () => {
-      showToast('Cache video cancellata! Ricarica la pagina per riananalizzare', 'success');
+      showToast('Video cache cleared! Reload the page to reanalyze', 'success');
       loadCacheInfo();
     });
   }
 });
 
 document.getElementById('clear-all-cache').addEventListener('click', () => {
-  if (confirm('⚠️ ATTENZIONE: Cancellare TUTTA la cache?\n\nTutti i video dovranno essere rianalizzati.')) {
+  if (confirm('⚠️ WARNING: Clear ALL cache?\n\nAll videos will need to be reanalyzed.')) {
     chrome.storage.local.get(null, (items) => {
       const keysToRemove = Object.keys(items).filter(key => key.startsWith('analysis_'));
       chrome.storage.local.remove(keysToRemove, () => {
-        showToast(`${keysToRemove.length} video rimossi dalla cache!`, 'success');
+        showToast(`${keysToRemove.length} videos removed from cache!`, 'success');
         loadCacheInfo();
       });
     });
@@ -135,7 +135,7 @@ document.getElementById('clear-all-cache').addEventListener('click', () => {
 // Confidence Threshold Slider
 document.getElementById('confidence-slider').addEventListener('input', (e) => {
   if (isLoadingSettings) {
-    console.log('⏳ Caricamento in corso - evento ignorato');
+    console.log('⏳ Loading in progress - event ignored');
     return;
   }
   const value = e.target.value / 100; // Convert 50-100 to 0.5-1.0
@@ -146,17 +146,17 @@ document.getElementById('confidence-slider').addEventListener('input', (e) => {
 // AI Model Selection
 document.getElementById('ai-model').addEventListener('change', (e) => {
   if (isLoadingSettings) {
-    console.log('⏳ Caricamento in corso - evento ignorato');
+    console.log('⏳ Loading in progress - event ignored');
     return;
   }
-  console.log('🤖 Modello IA cambiato:', e.target.value);
+  console.log('🤖 AI model changed:', e.target.value);
   saveAdvancedSettings();
 });
 
 // Skip Buffer Slider
 document.getElementById('buffer-slider').addEventListener('input', (e) => {
   if (isLoadingSettings) {
-    console.log('⏳ Caricamento in corso - evento ignorato');
+    console.log('⏳ Loading in progress - event ignored');
     return;
   }
   const value = e.target.value / 10; // Convert 0-30 to 0.0-3.0
@@ -176,11 +176,11 @@ function updateStatus(isActive) {
   if (isActive) {
     statusDot.classList.remove('inactive');
     statusDot.classList.add('active');
-    statusText.textContent = 'Attivo';
+    statusText.textContent = 'Active';
   } else {
     statusDot.classList.remove('active');
     statusDot.classList.add('inactive');
-    statusText.textContent = 'Inattivo';
+    statusText.textContent = 'Inactive';
   }
 }
 
@@ -196,17 +196,17 @@ function saveSettings() {
     enablePreview: true
   };
 
-  console.log('💾 Salvataggio impostazioni:', settings);
+  console.log('💾 Saving settings:', settings);
 
   chrome.storage.local.set({ settings }, () => {
-    console.log('✓ Impostazioni salvate con successo');
+    console.log('✓ Settings saved successfully');
   });
 
   sendMessage('updateSettings', settings);
 }
 
 function loadAdvancedSettings(advSettings) {
-  console.log('🔄 loadAdvancedSettings chiamata con:', advSettings);
+  console.log('🔄 loadAdvancedSettings called with:', advSettings);
 
   // Confidence Threshold
   const confidenceSlider = document.getElementById('confidence-slider');
@@ -216,9 +216,9 @@ function loadAdvancedSettings(advSettings) {
 
   // AI Model
   const aiModelSelect = document.getElementById('ai-model');
-  console.log('🔄 Impostando aiModel a:', advSettings.aiModel, 'valore attuale:', aiModelSelect.value);
+  console.log('🔄 Setting aiModel to:', advSettings.aiModel, 'current value:', aiModelSelect.value);
   aiModelSelect.value = advSettings.aiModel;
-  console.log('✓ aiModel dopo impostazione:', aiModelSelect.value);
+  console.log('✓ aiModel after setting:', aiModelSelect.value);
 
   // Skip Buffer
   const bufferSlider = document.getElementById('buffer-slider');
@@ -229,50 +229,50 @@ function loadAdvancedSettings(advSettings) {
   // Channel Whitelist Count
   const whitelistCount = advSettings.channelWhitelist?.length || 0;
   document.getElementById('whitelist-count').textContent =
-    whitelistCount === 0 ? '0 canali esclusi' :
-    whitelistCount === 1 ? '1 canale escluso' :
-    `${whitelistCount} canali esclusi`;
+    whitelistCount === 0 ? '0 excluded channels' :
+    whitelistCount === 1 ? '1 excluded channel' :
+    `${whitelistCount} excluded channels`;
 
-  console.log('✓ Impostazioni avanzate caricate:', advSettings);
+  console.log('✓ Advanced settings loaded:', advSettings);
 }
 
 function saveAdvancedSettings() {
   const aiModelValue = document.getElementById('ai-model').value;
-  console.log('💾 saveAdvancedSettings chiamata, aiModel corrente:', aiModelValue);
+  console.log('💾 saveAdvancedSettings called, current aiModel:', aiModelValue);
 
   const advSettings = {
     confidenceThreshold: parseFloat(document.getElementById('confidence-slider').value) / 100,
     aiModel: aiModelValue,
     skipBuffer: parseFloat(document.getElementById('buffer-slider').value) / 10,
-    channelWhitelist: [] // Verrà aggiornato dalla whitelist manager
+    channelWhitelist: [] // Will be updated by whitelist manager
   };
 
-  console.log('💾 Impostazioni da salvare (prima di aggiungere whitelist):', advSettings);
+  console.log('💾 Settings to save (before adding whitelist):', advSettings);
 
-  // Carica l'attuale whitelist per non sovrascriverla
+  // Load current whitelist to not overwrite it
   chrome.storage.local.get(['advancedSettings'], (data) => {
-    console.log('💾 Dati attuali in storage:', data);
+    console.log('💾 Current data in storage:', data);
 
     if (data.advancedSettings?.channelWhitelist) {
       advSettings.channelWhitelist = data.advancedSettings.channelWhitelist;
     }
 
-    console.log('💾 Impostazioni finali da salvare:', advSettings);
+    console.log('💾 Final settings to save:', advSettings);
 
     chrome.storage.local.set({ advancedSettings: advSettings }, () => {
       if (chrome.runtime.lastError) {
-        console.error('❌ Errore nel salvataggio:', chrome.runtime.lastError);
+        console.error('❌ Error saving:', chrome.runtime.lastError);
         return;
       }
 
-      console.log('✓ Impostazioni avanzate salvate con successo:', advSettings);
+      console.log('✓ Advanced settings saved successfully:', advSettings);
 
-      // Verifica immediata
+      // Immediate verification
       chrome.storage.local.get(['advancedSettings'], (verifyData) => {
-        console.log('🔍 Verifica dati salvati:', verifyData);
+        console.log('🔍 Verify saved data:', verifyData);
       });
 
-      // Notifica content script del cambiamento
+      // Notify content script of the change
       sendMessage('updateAdvancedSettings', advSettings);
     });
   });
@@ -282,13 +282,13 @@ function openWhitelistManager() {
   const modal = document.getElementById('whitelist-modal');
   modal.classList.add('active');
 
-  // Carica la lista canali
+  // Load channels list
   loadWhitelistChannels();
 
-  // Prova a ottenere il canale corrente dalla tab attiva
+  // Try to get current channel from active tab
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (tabs[0] && tabs[0].url && tabs[0].url.includes('youtube.com/watch')) {
-      // Richiedi il nome del canale al content script
+      // Request channel name from content script
       chrome.tabs.sendMessage(tabs[0].id, { action: 'getCurrentChannel' }, (response) => {
         if (response && response.channelName) {
           const currentChannelInfo = document.getElementById('current-channel-info');
@@ -296,7 +296,7 @@ function openWhitelistManager() {
           currentChannelText.textContent = `📺 ${response.channelName}`;
           currentChannelInfo.style.display = 'block';
 
-          // Handler per aggiungere canale corrente
+          // Handler to add current channel
           document.getElementById('add-current-channel-btn').onclick = () => {
             addChannelToWhitelist(response.channelName);
           };
@@ -312,16 +312,16 @@ function loadWhitelistChannels() {
     const whitelistList = document.getElementById('whitelist-list');
 
     if (whitelist.length === 0) {
-      whitelistList.innerHTML = '<div class="empty-state">Nessun canale escluso.<br>Aggiungi canali per non analizzarli mai.</div>';
+      whitelistList.innerHTML = '<div class="empty-state">No excluded channels.<br>Add channels to never analyze them.</div>';
     } else {
       whitelistList.innerHTML = whitelist.map(channel => `
         <div class="whitelist-item">
           <span class="whitelist-item-name">${channel}</span>
-          <button class="whitelist-item-remove" data-channel="${channel}">Rimuovi</button>
+          <button class="whitelist-item-remove" data-channel="${channel}">Remove</button>
         </div>
       `).join('');
 
-      // Aggiungi event listeners per i pulsanti rimuovi
+      // Add event listeners for remove buttons
       document.querySelectorAll('.whitelist-item-remove').forEach(btn => {
         btn.addEventListener('click', (e) => {
           const channelToRemove = e.target.getAttribute('data-channel');
@@ -334,7 +334,7 @@ function loadWhitelistChannels() {
 
 function addChannelToWhitelist(channelName) {
   if (!channelName || !channelName.trim()) {
-    showToast('Inserisci un nome canale valido', 'warning');
+    showToast('Enter a valid channel name', 'warning');
     return;
   }
 
@@ -347,7 +347,7 @@ function addChannelToWhitelist(channelName) {
     };
 
     if (advSettings.channelWhitelist.includes(channelName.trim())) {
-      showToast('Canale già presente nella whitelist', 'warning');
+      showToast('Channel already in whitelist', 'warning');
       return;
     }
 
@@ -355,9 +355,9 @@ function addChannelToWhitelist(channelName) {
     chrome.storage.local.set({ advancedSettings: advSettings }, () => {
       loadAdvancedSettings(advSettings);
       loadWhitelistChannels();
-      showToast(`Canale "${channelName}" aggiunto alla whitelist`, 'success');
+      showToast(`Channel "${channelName}" added to whitelist`, 'success');
 
-      // Pulisci input
+      // Clear input
       const input = document.getElementById('channel-input');
       if (input) input.value = '';
     });
@@ -377,7 +377,7 @@ function removeChannelFromWhitelist(channelName) {
     chrome.storage.local.set({ advancedSettings: advSettings }, () => {
       loadAdvancedSettings(advSettings);
       loadWhitelistChannels();
-      showToast(`Canale "${channelName}" rimosso dalla whitelist`, 'info');
+      showToast(`Channel "${channelName}" removed from whitelist`, 'info');
     });
   });
 }
@@ -387,44 +387,44 @@ function sendMessage(action, data = {}) {
     if (tabs[0] && tabs[0].url && tabs[0].url.includes('youtube.com/watch')) {
       chrome.tabs.sendMessage(tabs[0].id, { action, ...data }, (response) => {
         if (chrome.runtime.lastError) {
-          console.log('⚠️ Content script non disponibile:', chrome.runtime.lastError.message);
+          console.log('⚠️ Content script not available:', chrome.runtime.lastError.message);
         }
       });
     } else {
-      console.log('ℹ️ Non sei su una pagina YouTube - messaggio non inviato');
+      console.log('ℹ️ Not on a YouTube page - message not sent');
     }
   });
 }
 
 function updateStats(stats) {
-  // Formatta tempo risparmiato
+  // Format time saved
   const hours = Math.floor((stats.timeSaved || 0) / 3600);
   const minutes = Math.floor(((stats.timeSaved || 0) % 3600) / 60);
   document.getElementById('time-saved').textContent = `${hours}h ${minutes}m`;
 
   document.getElementById('segments-skipped').textContent = stats.segmentsSkipped || 0;
-  // Non aggiorniamo videos-analyzed qui, lo fa loadCacheInfo()
+  // Don't update videos-analyzed here, loadCacheInfo() does it
 }
 
 function loadCacheInfo() {
   chrome.storage.local.get(null, (items) => {
-    // Filtra solo chiavi analysis_* con array validi
+    // Filter only analysis_* keys with valid arrays
     const cacheKeys = Object.keys(items).filter(key => {
       if (!key.startsWith('analysis_')) return false;
       const value = items[key];
       const isValid = Array.isArray(value) && value.length > 0;
       if (!isValid) {
-        console.warn(`⚠️ Chiave cache invalida: ${key}`, value);
+        console.warn(`⚠️ Invalid cache key: ${key}`, value);
       }
       return isValid;
     });
 
-    console.log(`📋 Video in cache: ${cacheKeys.length}`, cacheKeys);
+    console.log(`📋 Videos in cache: ${cacheKeys.length}`, cacheKeys);
 
-    // Mostra il numero di video in cache
+    // Show number of videos in cache
     document.getElementById('cache-size').textContent = cacheKeys.length;
 
-    // Mostra anche nel contatore "Video Analizzati"
+    // Also show in "Videos Analyzed" counter
     document.getElementById('videos-analyzed').textContent = cacheKeys.length;
   });
 }
@@ -442,7 +442,7 @@ function loadCurrentVideoInfo() {
             document.getElementById('current-video-section').style.display = 'block';
             document.getElementById('current-video-title').textContent = tabs[0].title.replace(' - YouTube', '');
             document.getElementById('current-video-segments').textContent =
-              `${analysis.length} segmenti rilevati: ${analysis.map(s => s.category).join(', ')}`;
+              `${analysis.length} segments detected: ${analysis.map(s => s.category).join(', ')}`;
           }
         });
       }
@@ -450,7 +450,7 @@ function loadCurrentVideoInfo() {
   });
 }
 
-// Link footer
+// Footer links
 document.getElementById('help').addEventListener('click', (e) => {
   e.preventDefault();
   chrome.tabs.create({ url: 'https://github.com/yourusername/youtube-smart-skip/wiki' });
@@ -468,19 +468,19 @@ document.getElementById('feedback').addEventListener('click', (e) => {
 
 // ========== MODAL EVENT LISTENERS ==========
 
-// Chiudi modal con X
+// Close modal with X
 document.getElementById('modal-close').addEventListener('click', () => {
   document.getElementById('whitelist-modal').classList.remove('active');
 });
 
-// Chiudi modal cliccando fuori
+// Close modal by clicking outside
 document.getElementById('whitelist-modal').addEventListener('click', (e) => {
   if (e.target.id === 'whitelist-modal') {
     document.getElementById('whitelist-modal').classList.remove('active');
   }
 });
 
-// Aggiungi canale da input
+// Add channel from input
 document.getElementById('add-channel-btn').addEventListener('click', () => {
   const channelInput = document.getElementById('channel-input');
   const channelName = channelInput.value.trim();
@@ -489,7 +489,7 @@ document.getElementById('add-channel-btn').addEventListener('click', () => {
   }
 });
 
-// Aggiungi canale con Enter
+// Add channel with Enter
 document.getElementById('channel-input').addEventListener('keypress', (e) => {
   if (e.key === 'Enter') {
     const channelName = e.target.value.trim();
@@ -541,7 +541,7 @@ function removeToast(toast) {
 
 // ========== DARK MODE ==========
 
-// Carica preferenza dark mode
+// Load dark mode preference
 chrome.storage.local.get(['darkMode'], (data) => {
   if (data.darkMode) {
     document.body.classList.add('dark-mode');
@@ -554,12 +554,12 @@ document.getElementById('dark-mode-toggle').addEventListener('click', () => {
   const isDark = document.body.classList.toggle('dark-mode');
   chrome.storage.local.set({ darkMode: isDark });
   updateDarkModeIcon(isDark);
-  showToast(isDark ? 'Dark mode attivato' : 'Dark mode disattivato', 'info', 2000);
+  showToast(isDark ? 'Dark mode enabled' : 'Dark mode disabled', 'info', 2000);
 });
 
 function updateDarkModeIcon(isDark) {
   const toggle = document.getElementById('dark-mode-toggle');
   const icon = toggle.querySelector('.material-icons');
   icon.textContent = isDark ? 'light_mode' : 'dark_mode';
-  toggle.title = isDark ? 'Attiva Light Mode' : 'Attiva Dark Mode';
+  toggle.title = isDark ? 'Enable Light Mode' : 'Enable Dark Mode';
 }
