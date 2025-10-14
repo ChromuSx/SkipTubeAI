@@ -4708,7 +4708,7 @@
 
       preview.innerHTML = `
       <div style="display: flex; align-items: center; gap: 12px;">
-        <span class="material-icons" style="font-size: 20px; flex-shrink: 0; color: #f9ab00;">&#xE002;</span>
+        <span class="material-icons" style="font-size: 20px; flex-shrink: 0; color: #f9ab00;">fast_forward</span>
         <div style="flex: 1;">
           <div style="font-weight: 500; font-size: 14px; margin-bottom: 4px;">Skipping ${segment.category}</div>
           <div style="font-size: 12px; opacity: 0.9;">In ${this.settings.skipBuffer}s</div>
@@ -5007,7 +5007,7 @@
         ${segment.description}
       </div>
       <div style="display: flex; align-items: center; gap: 4px; font-size: 11px; color: #5f6368; padding-top: 6px; border-top: 1px solid #e8eaed;">
-        <span class="material-icons" style="font-size: 14px;">&#xE912;</span>
+        <span class="material-icons" style="font-size: 14px;">touch_app</span>
         <span>Click to skip</span>
       </div>
     `;
@@ -5051,12 +5051,12 @@
       const notification = document.createElement('div');
       notification.className = `yss-notification yss-${type}`;
 
-      // Material Design icons and colors
+      // Material Icons
       const icons = {
-        info: '&#xE88E;', // info_outline
-        success: '&#xE876;', // check_circle
-        warning: '&#xE002;', // warning
-        error: '&#xE000;' // error_outline
+        info: 'info_outline',
+        success: 'check_circle',
+        warning: 'warning',
+        error: 'error_outline'
       };
 
       const borderColors = {
@@ -5174,6 +5174,12 @@
       return new Promise(resolve => setTimeout(resolve, ms));
     }
   }
+
+  // Load Material Icons font
+  const materialIconsLink = document.createElement('link');
+  materialIconsLink.href = 'https://fonts.googleapis.com/icon?family=Material+Icons';
+  materialIconsLink.rel = 'stylesheet';
+  document.head.appendChild(materialIconsLink);
 
   // CSS Styles - Material Design 3
   const style = document.createElement('style');
