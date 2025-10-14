@@ -318,10 +318,27 @@ class YouTubeSkipManager {
   showSkipPreview(segment) {
     const preview = document.createElement('div');
     preview.className = 'yss-skip-preview';
+
     preview.innerHTML = `
-      <div class="yss-preview-content">
-        <span>⏩ Skipping ${segment.category} in ${this.settings.skipBuffer}s</span>
-        <button class="yss-cancel-skip">Cancel</button>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span class="material-icons" style="font-size: 20px; flex-shrink: 0; color: #f9ab00;">fast_forward</span>
+        <div style="flex: 1;">
+          <div style="font-weight: 500; font-size: 14px; margin-bottom: 4px;">Skipping ${segment.category}</div>
+          <div style="font-size: 12px; opacity: 0.9;">In ${this.settings.skipBuffer}s</div>
+        </div>
+        <button class="yss-cancel-skip" style="
+          padding: 8px 16px;
+          background: #1a73e8;
+          color: white;
+          border: none;
+          border-radius: 16px;
+          font-size: 13px;
+          font-weight: 500;
+          cursor: pointer;
+          font-family: Roboto, Arial, sans-serif;
+          transition: background 0.2s cubic-bezier(0.2, 0, 0, 1);
+          white-space: nowrap;
+        ">Cancel</button>
       </div>
     `;
 
@@ -329,25 +346,45 @@ class YouTubeSkipManager {
       position: fixed;
       top: 80px;
       right: 20px;
-      background: rgba(0, 0, 0, 0.8);
-      color: white;
-      padding: 15px;
+      background: white;
+      color: #202124;
+      padding: 14px 16px;
       border-radius: 8px;
-      z-index: 9999;
+      border-left: 4px solid #f9ab00;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1);
+      z-index: 10000;
       font-family: Roboto, Arial, sans-serif;
+      min-width: 300px;
+      animation: yss-slideIn 0.3s cubic-bezier(0.2, 0, 0, 1);
     `;
 
     document.body.appendChild(preview);
 
     // Handle cancellation
-    preview.querySelector('.yss-cancel-skip').onclick = () => {
+    const cancelBtn = preview.querySelector('.yss-cancel-skip');
+    cancelBtn.onclick = () => {
       this.skipSegments = this.skipSegments.filter(s => s !== segment);
-      preview.remove();
+      preview.style.animation = 'yss-slideOut 0.2s cubic-bezier(0.2, 0, 0, 1)';
+      setTimeout(() => preview.remove(), 200);
       this.logger.debug('Skip cancelled', { category: segment.category });
     };
 
+    // Hover effect
+    cancelBtn.addEventListener('mouseenter', () => {
+      cancelBtn.style.background = '#1765cc';
+    });
+
+    cancelBtn.addEventListener('mouseleave', () => {
+      cancelBtn.style.background = '#1a73e8';
+    });
+
     // Auto remove
-    setTimeout(() => preview.remove(), this.settings.skipBuffer * 1000 + 500);
+    setTimeout(() => {
+      if (preview.parentElement) {
+        preview.style.animation = 'yss-slideOut 0.2s cubic-bezier(0.2, 0, 0, 1)';
+        setTimeout(() => preview.remove(), 200);
+      }
+    }, this.settings.skipBuffer * 1000 + 500);
   }
 
   /**
@@ -569,32 +606,37 @@ class YouTubeSkipManager {
     const tooltip = document.createElement('div');
     tooltip.className = 'yss-segment-tooltip';
 
+    const categoryColor = this.getCategoryColor(segment.category);
+
     tooltip.innerHTML = `
-      <div style="font-weight: bold; margin-bottom: 4px;">${segment.category}</div>
-      <div style="font-size: 12px; opacity: 0.9;">
-        ${segment.getTimeRange()} (${segment.getDuration()}s)
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+        <div style="width: 4px; height: 16px; background: ${categoryColor}; border-radius: 2px;"></div>
+        <div style="font-weight: 500; font-size: 14px; color: #202124;">${segment.category}</div>
       </div>
-      <div style="font-size: 11px; margin-top: 4px; opacity: 0.8;">
+      <div style="font-size: 12px; color: #5f6368; margin-bottom: 6px;">
+        ${segment.getTimeRange()} • ${segment.getDuration()}s
+      </div>
+      <div style="font-size: 12px; color: #202124; line-height: 1.5; margin-bottom: 8px;">
         ${segment.description}
       </div>
-      <div style="font-size: 10px; margin-top: 6px; opacity: 0.7; font-style: italic;">
-        Click to skip
+      <div style="display: flex; align-items: center; gap: 4px; font-size: 11px; color: #5f6368; padding-top: 6px; border-top: 1px solid #e8eaed;">
+        <span class="material-icons" style="font-size: 14px;">touch_app</span>
+        <span>Click to skip</span>
       </div>
     `;
 
     tooltip.style.cssText = `
       position: fixed;
-      background: rgba(0, 0, 0, 0.95);
-      color: white;
-      padding: 10px 12px;
-      border-radius: 6px;
+      background: white;
+      color: #202124;
+      padding: 12px 14px;
+      border-radius: 8px;
       z-index: 10000;
       pointer-events: none;
       font-family: Roboto, Arial, sans-serif;
-      font-size: 13px;
       max-width: 300px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2), 0 2px 6px rgba(0, 0, 0, 0.12);
+      border: 1px solid #dadce0;
     `;
 
     document.body.appendChild(tooltip);
@@ -621,30 +663,71 @@ class YouTubeSkipManager {
   showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.className = `yss-notification yss-${type}`;
-    notification.textContent = message;
 
-    const colors = {
-      info: '#3498db',
-      success: '#27ae60',
-      warning: '#f39c12',
-      error: '#e74c3c'
+    // Material Icons
+    const icons = {
+      info: 'info_outline',
+      success: 'check_circle',
+      warning: 'warning',
+      error: 'error_outline'
     };
+
+    const borderColors = {
+      info: '#1a73e8',
+      success: '#0f9d58',
+      warning: '#f9ab00',
+      error: '#d93025'
+    };
+
+    notification.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span class="material-icons" style="font-size: 20px; flex-shrink: 0; color: ${borderColors[type]};">${icons[type]}</span>
+        <span style="flex: 1; font-size: 14px; line-height: 20px;">${message}</span>
+        <button class="yss-close-notification" style="background: none; border: none; color: #5f6368; cursor: pointer; padding: 0; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">&times;</button>
+      </div>
+    `;
 
     notification.style.cssText = `
       position: fixed;
       top: 20px;
       right: 20px;
-      background: ${colors[type]};
-      color: white;
-      padding: 12px 20px;
-      border-radius: 6px;
-      z-index: 9999;
+      background: white;
+      color: #202124;
+      padding: 14px 16px;
+      border-radius: 8px;
+      border-left: 4px solid ${borderColors[type]};
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1);
+      z-index: 10000;
       font-family: Roboto, Arial, sans-serif;
-      animation: slideIn 0.3s ease;
+      min-width: 280px;
+      max-width: 400px;
+      animation: yss-slideIn 0.3s cubic-bezier(0.2, 0, 0, 1);
     `;
 
+    // Close button handler
+    const closeBtn = notification.querySelector('.yss-close-notification');
+    closeBtn.addEventListener('click', () => {
+      notification.style.animation = 'yss-slideOut 0.2s cubic-bezier(0.2, 0, 0, 1)';
+      setTimeout(() => notification.remove(), 200);
+    });
+
+    closeBtn.addEventListener('mouseenter', () => {
+      closeBtn.style.color = '#202124';
+    });
+
+    closeBtn.addEventListener('mouseleave', () => {
+      closeBtn.style.color = '#5f6368';
+    });
+
     document.body.appendChild(notification);
-    setTimeout(() => notification.remove(), 3000);
+
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+      if (notification.parentElement) {
+        notification.style.animation = 'yss-slideOut 0.2s cubic-bezier(0.2, 0, 0, 1)';
+        setTimeout(() => notification.remove(), 200);
+      }
+    }, 3000);
   }
 
   /**
@@ -705,10 +788,36 @@ class YouTubeSkipManager {
   }
 }
 
-// CSS Styles
+// Load Material Icons font
+const materialIconsLink = document.createElement('link');
+materialIconsLink.href = 'https://fonts.googleapis.com/icon?family=Material+Icons';
+materialIconsLink.rel = 'stylesheet';
+document.head.appendChild(materialIconsLink);
+
+// CSS Styles - Material Design 3
 const style = document.createElement('style');
 style.textContent = `
-  @keyframes slideIn {
+  /* Material Icons support */
+  .material-icons {
+    font-family: 'Material Icons';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: 'liga';
+  }
+
+  /* Material Design animations */
+  @keyframes yss-slideIn {
     from {
       transform: translateX(100%);
       opacity: 0;
@@ -719,18 +828,24 @@ style.textContent = `
     }
   }
 
-  .yss-cancel-skip {
-    margin-left: 10px;
-    padding: 5px 10px;
-    background: rgba(255, 255, 255, 0.2);
-    border: 1px solid white;
-    color: white;
-    border-radius: 4px;
-    cursor: pointer;
+  @keyframes yss-slideOut {
+    from {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateX(100%);
+      opacity: 0;
+    }
   }
 
-  .yss-cancel-skip:hover {
-    background: rgba(255, 255, 255, 0.3);
+  /* Notification hover effects */
+  .yss-notification {
+    transition: box-shadow 0.2s cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  .yss-notification:hover {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2), 0 2px 6px rgba(0, 0, 0, 0.15);
   }
 `;
 document.head.appendChild(style);
