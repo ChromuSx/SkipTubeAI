@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Help - SkipTube AI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    /* Material Icons */
+    .material-icons {
+      font-family: 'Material Icons';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 24px;
+      display: inline-block;
+      line-height: 1;
+      text-transform: none;
+      letter-spacing: normal;
+      word-wrap: normal;
+      white-space: nowrap;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+      -moz-osx-font-smoothing: grayscale;
+      font-feature-settings: 'liga';
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: #f8f9fa;
+      color: #202124;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 24px;
+    }
+
+    .header {
+      background: white;
+      padding: 32px;
+      margin-bottom: 32px;
+      border-radius: 8px;
+      box-shadow: 0 1px 2px rgba(60, 64, 67, 0.3), 0 1px 3px rgba(60, 64, 67, 0.15);
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 32px;
+      font-weight: 400;
+      color: #202124;
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      color: #5f6368;
+      font-size: 16px;
+    }
+
+    .section {
+      background: white;
+      padding: 32px;
+      margin-bottom: 24px;
+      border-radius: 8px;
+      box-shadow: 0 1px 2px rgba(60, 64, 67, 0.3), 0 1px 3px rgba(60, 64, 67, 0.15);
+    }
+
+    .section h2 {
+      font-size: 24px;
+      font-weight: 500;
+      color: #202124;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .section h3 {
+      font-size: 18px;
+      font-weight: 500;
+      color: #1a73e8;
+      margin-top: 24px;
+      margin-bottom: 12px;
+    }
+
+    .section p {
+      margin-bottom: 16px;
+      color: #5f6368;
+      font-size: 14px;
+    }
+
+    .section ol, .section ul {
+      margin-left: 24px;
+      margin-bottom: 16px;
+      color: #5f6368;
+      font-size: 14px;
+    }
+
+    .section li {
+      margin-bottom: 8px;
+    }
+
+    .material-icons {
+      font-size: 28px;
+      color: #1a73e8;
+    }
+
+    .step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      background: #1a73e8;
+      color: white;
+      border-radius: 50%;
+      font-size: 14px;
+      font-weight: 500;
+      margin-right: 8px;
+    }
+
+    .note {
+      background: #e8f0fe;
+      border-left: 4px solid #1a73e8;
+      padding: 16px;
+      margin: 16px 0;
+      border-radius: 4px;
+    }
+
+    .note p {
+      color: #202124;
+      margin: 0;
+    }
+
+    .warning {
+      background: #fef7e0;
+      border-left: 4px solid #f9ab00;
+      padding: 16px;
+      margin: 16px 0;
+      border-radius: 4px;
+    }
+
+    .warning p {
+      color: #202124;
+      margin: 0;
+    }
+
+    code {
+      background: #f1f3f4;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      color: #d93025;
+    }
+
+    .faq-item {
+      margin-bottom: 24px;
+    }
+
+    .faq-question {
+      font-weight: 500;
+      color: #202124;
+      margin-bottom: 8px;
+      font-size: 15px;
+    }
+
+    .faq-answer {
+      color: #5f6368;
+      font-size: 14px;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      background: #1a73e8;
+      color: white;
+      text-decoration: none;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 500;
+      transition: background 0.2s;
+      margin-top: 32px;
+    }
+
+    .back-link:hover {
+      background: #1557b0;
+    }
+
+    /* Dark Mode Toggle */
+    .dark-mode-toggle {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      width: 56px;
+      height: 56px;
+      background: #1a73e8;
+      border: none;
+      border-radius: 50%;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      transition: all 0.2s;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .dark-mode-toggle:hover {
+      transform: scale(1.1);
+    }
+
+    /* Dark Mode Styles */
+    body.dark-mode {
+      background: #0f0f0f;
+      color: #f1f1f1;
+    }
+
+    body.dark-mode .header,
+    body.dark-mode .section {
+      background: #1e1e1e;
+      border-color: #3a3a3a;
+    }
+
+    body.dark-mode .header h1,
+    body.dark-mode .section h2,
+    body.dark-mode .faq-question,
+    body.dark-mode .note p,
+    body.dark-mode .warning p {
+      color: #f1f1f1;
+    }
+
+    body.dark-mode .header p,
+    body.dark-mode .section p,
+    body.dark-mode .section li,
+    body.dark-mode .faq-answer {
+      color: #aaaaaa;
+    }
+
+    body.dark-mode code {
+      background: #272727;
+      color: #f28b82;
+    }
+
+    body.dark-mode .note {
+      background: rgba(26, 115, 232, 0.1);
+      border-left-color: #1a73e8;
+    }
+
+    body.dark-mode .warning {
+      background: rgba(249, 171, 0, 0.1);
+      border-left-color: #f9ab00;
+    }
+
+    body.dark-mode .dark-mode-toggle {
+      background: #f1f1f1;
+      color: #0f0f0f;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>SkipTube AI - Help Guide</h1>
+      <p>AI-powered YouTube content skipper</p>
+    </div>
+
+    <!-- Getting Started -->
+    <div class="section">
+      <h2>
+        <span class="material-icons">rocket_launch</span>
+        Getting Started
+      </h2>
+      <p>Follow these simple steps to start using SkipTube AI:</p>
+
+      <h3><span class="step-number">1</span> Get Your API Key</h3>
+      <p>You need a Claude AI API key from Anthropic:</p>
+      <ol>
+        <li>Go to <a href="https://console.anthropic.com/" target="_blank">console.anthropic.com</a></li>
+        <li>Create an account or log in</li>
+        <li>Navigate to API Keys section</li>
+        <li>Create a new API key and copy it</li>
+      </ol>
+
+      <div class="note">
+        <p><strong>Note:</strong> Your API key is stored locally in your browser and never shared with anyone except Anthropic's API for video analysis.</p>
+      </div>
+
+      <h3><span class="step-number">2</span> Configure the Extension</h3>
+      <ol>
+        <li>Click the SkipTube AI extension icon in your browser</li>
+        <li>Paste your API key in the settings</li>
+        <li>Choose which content types you want to skip (Sponsors, Intros, Outros, etc.)</li>
+        <li>Save your settings</li>
+      </ol>
+
+      <h3><span class="step-number">3</span> Watch YouTube Videos</h3>
+      <p>That's it! The extension will automatically analyze videos and skip unwanted segments when you watch YouTube.</p>
+    </div>
+
+    <!-- Features -->
+    <div class="section">
+      <h2>
+        <span class="material-icons">settings</span>
+        Features & Settings
+      </h2>
+
+      <h3>Content Types</h3>
+      <p>Choose which types of content to skip:</p>
+      <ul>
+        <li><strong>Sponsors:</strong> Product/service sponsorships and ads</li>
+        <li><strong>Intros:</strong> Video introductions and opening sequences</li>
+        <li><strong>Outros:</strong> End screens and closing sequences</li>
+        <li><strong>Self-Promotion:</strong> Channel self-promotion and merchandise</li>
+        <li><strong>Donations:</strong> Super chat acknowledgments and donation mentions</li>
+      </ul>
+
+      <h3>Advanced Settings</h3>
+      <ul>
+        <li><strong>Skip Buffer:</strong> Time in seconds before segment to start skipping (default: 0.5s)</li>
+        <li><strong>Confidence Threshold:</strong> AI confidence level required to skip (0-1, default: 0.85)</li>
+        <li><strong>Channel Whitelist:</strong> Add channels to exclude from analysis</li>
+        <li><strong>Enable Preview:</strong> Show notification before skipping</li>
+      </ul>
+    </div>
+
+    <!-- How It Works -->
+    <div class="section">
+      <h2>
+        <span class="material-icons">psychology</span>
+        How It Works
+      </h2>
+      <ol>
+        <li>When you watch a YouTube video, the extension extracts the video transcript</li>
+        <li>The transcript is sent to Claude AI for analysis</li>
+        <li>AI identifies sponsorships, intros, outros, and other segments</li>
+        <li>Results are cached locally to avoid re-analyzing the same video</li>
+        <li>The extension automatically skips identified segments based on your preferences</li>
+      </ol>
+
+      <div class="warning">
+        <p><strong>Important:</strong> This extension only works with videos that have subtitles/transcripts available.</p>
+      </div>
+    </div>
+
+    <!-- FAQ -->
+    <div class="section">
+      <h2>
+        <span class="material-icons">help_outline</span>
+        Frequently Asked Questions
+      </h2>
+
+      <div class="faq-item">
+        <div class="faq-question">Q: Why isn't the extension working on a video?</div>
+        <div class="faq-answer">A: The video must have subtitles/transcripts available. The extension cannot analyze videos without transcripts.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">Q: Is my data private?</div>
+        <div class="faq-answer">A: Yes! All settings and cache are stored locally on your device. Only video transcripts are sent to Anthropic's API for analysis. See our <a href="https://github.com/ChromuSx/SkipTubeAI/blob/main/PRIVACY.md" target="_blank">Privacy Policy</a> for details.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">Q: Does this cost money?</div>
+        <div class="faq-answer">A: You need to pay for Claude AI API usage through Anthropic. The cost is very low (typically fractions of a cent per video). The extension itself is free and open source.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">Q: Can I whitelist specific channels?</div>
+        <div class="faq-answer">A: Yes! Go to Advanced Settings and add channel handles or IDs to the whitelist. Videos from those channels won't be analyzed.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">Q: How do I clear the cache?</div>
+        <div class="faq-answer">A: Click the extension icon, go to the Statistics section, and click "Clear Cache". You can also view cached videos by clicking "View Cache".</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">Q: The extension skipped something it shouldn't have</div>
+        <div class="faq-answer">A: You can increase the Confidence Threshold in Advanced Settings to make the AI more conservative. You can also whitelist specific channels.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">Q: Is this open source?</div>
+        <div class="faq-answer">A: Yes! The code is available at <a href="https://github.com/ChromuSx/SkipTubeAI" target="_blank">github.com/ChromuSx/SkipTubeAI</a></div>
+      </div>
+    </div>
+
+    <!-- Support -->
+    <div class="section">
+      <h2>
+        <span class="material-icons">support_agent</span>
+        Support & Feedback
+      </h2>
+      <p>Need help or want to report an issue?</p>
+      <ul>
+        <li><strong>GitHub Issues:</strong> <a href="https://github.com/ChromuSx/SkipTubeAI/issues" target="_blank">Report a bug or request a feature</a></li>
+        <li><strong>Email:</strong> giovanni.guarino1999@gmail.com</li>
+        <li><strong>Privacy Policy:</strong> <a href="https://github.com/ChromuSx/SkipTubeAI/blob/main/PRIVACY.md" target="_blank">Read our privacy policy</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Dark Mode Toggle -->
+  <button class="dark-mode-toggle" id="dark-mode-toggle" title="Toggle Dark Mode">
+    <span class="material-icons">dark_mode</span>
+  </button>
+
+  <script src="help.js"></script>
+</body>
+</html>

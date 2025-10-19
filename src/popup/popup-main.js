@@ -438,17 +438,17 @@ class PopupManager {
     // Footer links
     document.getElementById('help').addEventListener('click', (e) => {
       e.preventDefault();
-      chrome.tabs.create({ url: 'https://github.com/yourusername/youtube-smart-skip/wiki' });
+      chrome.tabs.create({ url: chrome.runtime.getURL('help.html') });
     });
 
     document.getElementById('privacy').addEventListener('click', (e) => {
       e.preventDefault();
-      chrome.tabs.create({ url: 'privacy.html' });
+      chrome.tabs.create({ url: 'https://github.com/ChromuSx/SkipTubeAI/blob/main/PRIVACY.md' });
     });
 
     document.getElementById('feedback').addEventListener('click', (e) => {
       e.preventDefault();
-      chrome.tabs.create({ url: 'https://github.com/yourusername/youtube-smart-skip/issues' });
+      chrome.tabs.create({ url: 'https://github.com/ChromuSx/SkipTubeAI/issues' });
     });
 
     this.logger.debug('Event listeners configured');
