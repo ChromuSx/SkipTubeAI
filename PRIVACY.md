@@ -154,7 +154,7 @@ The Extension can be used globally. However:
 For questions, concerns, or requests regarding this Privacy Policy:
 
 - **GitHub Issues:** https://github.com/ChromuSx/SkipTubeAI/issues
-- **Email:** [Your Contact Email]
+- **Email:** giovanni.guarino1999@gmail.com
 
 ## Open Source
 
