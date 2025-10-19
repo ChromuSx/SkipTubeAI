@@ -14,7 +14,8 @@
     "clean": "rimraf dist",
     "dev": "npm run build -- --watch",
     "type-check": "tsc --noEmit",
-    "generate-icons": "node generate-icons.js"
+    "generate-icons": "node generate-icons.js",
+    "optimize-screenshots": "node optimize-screenshots.js"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^25.0.7",

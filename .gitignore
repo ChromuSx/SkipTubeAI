@@ -45,6 +45,12 @@ yarn-error.log*
 *.pem
 *.zip
 
+# Screenshots (keep optimized, ignore originals if too large)
+screenshots/*.png
+screenshots/*.jpg
+!screenshots/optimized/
+!screenshots/README.md
+
 # Temporary files
 tmp/
 temp/
