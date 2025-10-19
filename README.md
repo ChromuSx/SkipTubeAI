@@ -2,29 +2,22 @@
 
 <div align="center">
 
-![SkipTube AI Logo](logo.png)
+<img src="icons/icon128.png" alt="SkipTube AI Logo" width="128">
 
 **AI-powered Chrome extension that automatically detects and skips sponsorships, intros, outros, and promotional content in YouTube videos using Claude AI.**
 
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/ChromuSx/SkipTubeAI/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Chrome Web Store](https://img.shields.io/badge/Chrome-Web%20Store-orange.svg)](https://chrome.google.com/webstore)
+[![GitHub Stars](https://img.shields.io/github/stars/ChromuSx/SkipTubeAI?style=social)](https://github.com/ChromuSx/SkipTubeAI)
+
+<a href="https://github.com/sponsors/ChromuSx"><img src="https://img.shields.io/badge/Sponsor-GitHub-EA4AAA?style=for-the-badge&logo=github-sponsors&logoColor=white" alt="GitHub Sponsors"></a>
+<a href="https://ko-fi.com/chromus"><img src="https://img.shields.io/badge/Support-Ko--fi-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white" alt="Ko-fi"></a>
+<a href="https://buymeacoffee.com/chromus"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me a Coffee"></a>
+<a href="https://www.paypal.com/paypalme/giovanniguarino1999"><img src="https://img.shields.io/badge/Donate-PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white" alt="PayPal"></a>
 
 [Install from Chrome Web Store](#installation) • [Documentation](#documentation) • [Support](#support)
 
-</div>
-
----
-
-## 📸 Screenshots
-
-<div align="center">
-<img src="Screenshots/1-extension-settings.png" width="45%" alt="Extension Settings">
-<img src="Screenshots/3-statistics-dashboard.png" width="45%" alt="Statistics Dashboard">
-</div>
-
-<div align="center">
-<img src="Screenshots/4-cache-viewer.png" width="90%" alt="Cache Viewer">
 </div>
 
 ---
@@ -78,19 +71,6 @@ See [Development Setup](#development-setup) below.
 4. **Smart Caching**: Results are cached locally for 30 days to avoid re-analysis
 5. **Visual Feedback**: Colored markers appear on the video timeline
 6. **Automatic Skipping**: The extension automatically skips identified segments during playback
-
----
-
-## 💰 Cost
-
-SkipTube AI uses **your personal Claude API key**, so you pay only for what you use:
-
-- **Claude Haiku** (default): ~$0.001-0.002 per video
-- **Claude Sonnet** (more accurate): ~$0.005-0.010 per video
-
-Thanks to intelligent caching, each video is analyzed **only once**. For average usage (50 videos/month), the monthly cost is approximately **$0.10-0.50**.
-
-Anthropic provides **free credits** for new accounts to get started!
 
 ---
 
@@ -475,6 +455,21 @@ Contributions are welcome! Please follow these steps:
 - Add JSDoc comments for new functions
 - Test thoroughly before submitting
 - Update documentation if needed
+
+---
+
+## 💖 Support the Project
+
+This project is completely **free and open source**. If you find it useful and would like to support its continued development and updates, consider making a donation. Your support helps keep the project alive and motivates me to add new features and improvements!
+
+<div align="center">
+  <a href="https://github.com/sponsors/ChromuSx"><img src="https://img.shields.io/badge/Sponsor-GitHub-EA4AAA?style=for-the-badge&logo=github-sponsors&logoColor=white" alt="GitHub Sponsors"></a>
+  <a href="https://ko-fi.com/chromus"><img src="https://img.shields.io/badge/Support-Ko--fi-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white" alt="Ko-fi"></a>
+  <a href="https://buymeacoffee.com/chromus"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me a Coffee"></a>
+  <a href="https://www.paypal.com/paypalme/giovanniguarino1999"><img src="https://img.shields.io/badge/Donate-PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white" alt="PayPal"></a>
+</div>
+
+Every contribution, no matter how small, is greatly appreciated! ❤️
 
 ---
 
