@@ -11,6 +11,10 @@ dist/
 *.bundle.js
 *.bundle.js.map
 
+# Generated HTML files (copied from src/ during build)
+/popup.html
+/cache-viewer.html
+
 # TypeScript
 *.tsbuildinfo
 
@@ -44,3 +48,4 @@ yarn-error.log*
 # Temporary files
 tmp/
 temp/
+nul

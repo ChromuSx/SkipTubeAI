@@ -24,24 +24,31 @@ export class AIService {
   /**
    * Analyze transcript with AI
    * @param {Transcript} transcript - Transcript to analyze
-   * @param {AdvancedSettings} settings - Advanced settings
+   * @param {AdvancedSettings} advancedSettings - Advanced settings
+   * @param {Settings} userSettings - User settings (for enabled categories)
    * @returns {Promise<AnalysisResult>}
    */
-  async analyzeTranscript(transcript, settings) {
+  async analyzeTranscript(transcript, advancedSettings, userSettings = null) {
     const stopTimer = this.logger.time(`AI analysis for ${transcript.videoId}`);
 
     try {
+      // Get enabled categories from user settings
+      const enabledCategories = userSettings
+        ? this.getEnabledAICategories(userSettings)
+        : null; // null means all categories
+
       this.logger.info(`Starting AI analysis`, {
         videoId: transcript.videoId,
-        model: settings.aiModel,
-        wordCount: transcript.getWordCount()
+        model: advancedSettings.aiModel,
+        wordCount: transcript.getWordCount(),
+        enabledCategories: enabledCategories || 'all'
       });
 
       // Format transcript for AI
       const formattedText = transcript.formatForAI();
 
-      // Create request payload
-      const payload = this.createPayload(formattedText, settings.aiModel);
+      // Create request payload with enabled categories
+      const payload = this.createPayload(formattedText, advancedSettings.aiModel, enabledCategories);
 
       // Validate payload
       APIValidator.validateRequestPayload(payload);
@@ -61,7 +68,7 @@ export class AIService {
       // Filter by confidence threshold
       const filteredSegments = this.filterByConfidence(
         parsed.segments,
-        settings.confidenceThreshold
+        advancedSettings.confidenceThreshold
       );
 
       // Create segments
@@ -69,7 +76,7 @@ export class AIService {
 
       // Create result
       const result = new AnalysisResult(transcript.videoId, segments, {
-        model: settings.aiModel,
+        model: advancedSettings.aiModel,
         transcriptLength: transcript.getCharCount(),
         processingTime: stopTimer()
       });
@@ -92,18 +99,65 @@ export class AIService {
   }
 
   /**
+   * Get enabled AI categories from user settings
+   * @param {Settings} userSettings - User settings
+   * @returns {Array<Object>} Array of enabled category objects
+   */
+  getEnabledAICategories(userSettings) {
+    const categories = [];
+
+    if (userSettings.skipSponsors) {
+      categories.push({
+        name: 'sponsorships',
+        description: 'Paid promotions, sponsored content'
+      });
+    }
+
+    if (userSettings.skipIntros) {
+      categories.push({
+        name: 'intro',
+        description: 'Opening sequences, channel intros'
+      });
+    }
+
+    if (userSettings.skipOutros) {
+      categories.push({
+        name: 'outro',
+        description: 'Closing sequences, end screens'
+      });
+    }
+
+    if (userSettings.skipDonations) {
+      categories.push({
+        name: 'donations',
+        description: 'Super chat acknowledgments, donation mentions'
+      });
+    }
+
+    if (userSettings.skipSelfPromo) {
+      categories.push({
+        name: 'channel_self_promo',
+        description: 'Channel promotions, merch plugs, social media callouts'
+      });
+    }
+
+    return categories;
+  }
+
+  /**
    * Create request payload
    * @param {string} text - Formatted transcript text
    * @param {string} model - AI model
+   * @param {Array<Object>} enabledCategories - Enabled categories (null = all)
    * @returns {Object}
    */
-  createPayload(text, model) {
+  createPayload(text, model, enabledCategories = null) {
     const modelMap = {
       'haiku': 'claude-3-5-haiku-20241022',
       'sonnet': 'claude-sonnet-4-5-20250929'
     };
 
-    const systemPrompt = this.getSystemPrompt();
+    const systemPrompt = this.getSystemPrompt(enabledCategories);
     const userMessage = this.getUserMessage(text);
 
     return {
@@ -122,37 +176,100 @@ export class AIService {
 
   /**
    * Get system prompt
+   * @param {Array<Object>} enabledCategories - Enabled categories (null = all)
    * @returns {string}
    */
-  getSystemPrompt() {
-    return `You are an AI assistant specialized in analyzing YouTube video transcripts to identify segments that viewers might want to skip.
+  getSystemPrompt(enabledCategories = null) {
+    // Default categories if none specified
+    const defaultCategories = [
+      { name: 'sponsorships', description: 'Paid promotions, sponsored content' },
+      { name: 'intro', description: 'Opening sequences, channel intros' },
+      { name: 'outro', description: 'Closing sequences, end screens' },
+      { name: 'donations', description: 'Super chat acknowledgments, donation mentions' },
+      { name: 'channel_self_promo', description: 'Channel promotions, merch plugs, social media callouts' }
+    ];
 
-Your task is to analyze the provided transcript and identify segments that fall into these categories:
-- sponsorships: Paid promotions, sponsored content
-- intro: Opening sequences, channel intros
-- outro: Closing sequences, end screens
-- donations: Super chat acknowledgments, donation mentions
-- channel_self_promo: Channel promotions, merch plugs, social media callouts
+    const categoriesToUse = enabledCategories && enabledCategories.length > 0
+      ? enabledCategories
+      : defaultCategories;
 
-Return ONLY a valid JSON object in this exact format:
+    // Build category list for prompt
+    const categoryList = categoriesToUse
+      .map(cat => `- ${cat.name}: ${cat.description}`)
+      .join('\n');
+
+    // Build allowed categories for validation
+    const allowedCategories = categoriesToUse.map(cat => cat.name).join(', ');
+
+    return `Analyze this YouTube video transcript to identify segments viewers might want to skip.
+
+<objective>
+Your task is to identify time ranges in the transcript that fall into these specific categories:
+
+${categoryList}
+</objective>
+
+<analysis_steps>
+Follow these steps to analyze the transcript:
+
+1. Read through the entire transcript carefully to understand the video's flow and content
+2. Identify transitions in content (e.g., sudden topic changes, promotional language, channel-specific callouts)
+3. Look for linguistic patterns:
+   - Sponsorships: "This video is sponsored by...", "Thanks to [brand] for...", product descriptions with affiliate links
+   - Intros: Channel greetings, "Welcome back to...", theme music descriptions, episode numbers
+   - Outros: "Thanks for watching", "Don't forget to subscribe", end cards, social media mentions at video end
+   - Donations: "Thank you to...", super chat readings, patron shout-outs
+   - Self-promotion: "Check out my merch", "Join the Discord", "New video coming", course/product announcements
+4. Determine precise start and end timestamps for each identified segment
+5. Assign confidence level based on:
+   - High (0.9-1.0): Clear, unambiguous promotional/non-content language
+   - Medium (0.7-0.89): Probable but with some content mixed in
+   - Low (0.5-0.69): Uncertain, could be legitimate content
+6. Only include segments with confidence >= 0.5
+</analysis_steps>
+
+<output_requirements>
+Return ONLY a valid JSON object without any markdown formatting or explanation:
+
 {
   "segments": [
     {
-      "start": <number>,
-      "end": <number>,
-      "category": "<category>",
-      "confidence": <number between 0 and 1>,
-      "description": "<brief description>"
+      "start": <integer seconds>,
+      "end": <integer seconds>,
+      "category": "<one of: ${allowedCategories}>",
+      "confidence": <number 0.0-1.0>,
+      "description": "<brief 5-10 word description of what happens in this segment>"
     }
   ]
 }
+</output_requirements>
 
-Important:
-- Times must be in seconds (integers)
-- Categories must be exactly as listed above
-- Confidence should reflect how certain you are (0.0 to 1.0)
-- Only include segments you're confident about
-- Return empty segments array if nothing found`;
+<guidelines>
+- Times MUST be integers in seconds
+- Categories MUST be exactly one of: ${allowedCategories}
+- Confidence must be a decimal between 0.0 and 1.0
+- Description should be concise and specific (e.g., "NordVPN sponsorship read" not just "sponsor")
+- ONLY identify segments matching the categories above - ignore everything else
+- If no segments found, return empty array: {"segments": []}
+- Prefer slightly longer segments over splitting into multiple parts (merge adjacent segments of same category)
+- Do NOT include legitimate video content even if briefly mentioning brands/products in educational context
+</guidelines>
+
+<examples>
+Example of a good segment identification:
+{
+  "start": 45,
+  "end": 98,
+  "category": "sponsorships",
+  "confidence": 0.95,
+  "description": "Surfshark VPN sponsorship with discount code"
+}
+
+Example of what NOT to flag:
+- Brief product mentions in tutorial/review content
+- Creator discussing their past videos as part of current topic
+- Genuine acknowledgments integrated into content discussion
+</examples>`;
   }
 
   /**
@@ -161,11 +278,11 @@ Important:
    * @returns {string}
    */
   getUserMessage(text) {
-    return `Analyze this YouTube video transcript and identify segments to skip:
-
+    return `<transcript>
 ${text}
+</transcript>
 
-Return the analysis as JSON.`;
+Analyze the transcript above and return your analysis as a JSON object containing the segments to skip.`;
   }
 
   /**

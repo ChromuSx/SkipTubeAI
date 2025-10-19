@@ -16,8 +16,8 @@ import {
  */
 class BackgroundService {
   constructor() {
-    // API Configuration - replace with your own key
-    this.API_KEY = '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';
+    // API Configuration
+    this.API_KEY = null;
     this.API_ENDPOINT = 'https://api.anthropic.com/v1/messages';
 
     // Initialize services
@@ -25,21 +25,56 @@ class BackgroundService {
     this.storageService = new StorageService();
     this.analyticsService = new AnalyticsService();
 
-    // Initialize AI service
+    // AI service will be initialized after loading API key
+    this.aiService = null;
+
+    // Initialize async
+    this.initialize();
+  }
+
+  /**
+   * Initialize background service (async)
+   */
+  async initialize() {
     try {
-      this.aiService = new AIService(this.API_KEY, this.API_ENDPOINT);
+      // Load API key from storage
+      await this.loadAPIKey();
+
+      this.setupMessageListener();
+      this.schedulePeriodicMaintenance();
+
       this.logger.info('Background service initialized', {
         hasAPIKey: !!this.API_KEY
       });
     } catch (error) {
-      this.logger.error('Failed to initialize AI service', {
+      this.logger.error('Failed to initialize background service', {
         error: error.message
       });
-      this.aiService = null;
     }
+  }
 
-    this.setupMessageListener();
-    this.schedulePeriodicMaintenance();
+  /**
+   * Load API key from storage
+   */
+  async loadAPIKey() {
+    try {
+      const data = await chrome.storage.local.get(['apiKey']);
+
+      if (data.apiKey && data.apiKey.length >= 20) {
+        this.API_KEY = data.apiKey;
+
+        // Initialize AI service with the loaded key
+        this.aiService = new AIService(this.API_KEY, this.API_ENDPOINT);
+
+        this.logger.info('API key loaded successfully');
+      } else {
+        this.logger.warn('No valid API key found in storage');
+      }
+    } catch (error) {
+      this.logger.error('Failed to load API key', {
+        error: error.message
+      });
+    }
   }
 
   /**
@@ -68,10 +103,57 @@ class BackgroundService {
         return true; // Keep channel open for async response
       }
 
+      if (request.action === 'updateAPIKey') {
+        this.handleAPIKeyUpdate(request.apiKey)
+          .then(() => sendResponse({ success: true }))
+          .catch(error => {
+            this.logger.error('API key update failed', {
+              error: error.message
+            });
+            sendResponse({
+              success: false,
+              error: error.message
+            });
+          });
+        return true; // Keep channel open for async response
+      }
+
+      if (request.action === 'getAPIKeyStatus') {
+        sendResponse({
+          configured: !!this.API_KEY,
+          hasAIService: !!this.aiService
+        });
+        return false;
+      }
+
       return false;
     });
 
     this.logger.info('Message listener configured');
+  }
+
+  /**
+   * Handle API key update
+   * @param {string} newKey - New API key
+   */
+  async handleAPIKeyUpdate(newKey) {
+    try {
+      if (!newKey || newKey.length < 20) {
+        throw new APIKeyError('Invalid API key format');
+      }
+
+      this.API_KEY = newKey;
+
+      // Reinitialize AI service with new key
+      this.aiService = new AIService(this.API_KEY, this.API_ENDPOINT);
+
+      this.logger.info('API key updated successfully');
+    } catch (error) {
+      this.logger.error('Failed to update API key', {
+        error: error.message
+      });
+      throw error;
+    }
   }
 
   /**
@@ -92,8 +174,11 @@ class BackgroundService {
       });
 
       // Verify AI service is available
-      if (!this.aiService) {
-        throw new APIKeyError('AI service not initialized - check API key');
+      if (!this.aiService || !this.API_KEY) {
+        throw new APIKeyError(
+          'API key not configured. Please open the extension popup and enter your Claude API key. ' +
+          'Get your API key from https://console.anthropic.com/settings/keys'
+        );
       }
 
       // Validate input
@@ -101,8 +186,9 @@ class BackgroundService {
         throw new TranscriptNotAvailableError(videoId);
       }
 
-      // Get advanced settings
+      // Get advanced settings and user settings
       const advancedSettings = await this.storageService.getAdvancedSettings();
+      const userSettings = await this.storageService.getSettings();
 
       // Check cache first
       const cachedResult = await this.storageService.getCachedAnalysis(videoId);
@@ -112,9 +198,12 @@ class BackgroundService {
         // Track cache performance
         this.analyticsService.trackCachePerformance(videoId, true, stopTimer());
 
+        // Filter cached segments by current user settings
+        const filteredSegments = cachedResult.getEnabledSegments(userSettings);
+
         return {
           success: true,
-          segments: cachedResult.segments.map(s => s.toJSON()),
+          segments: filteredSegments.map(s => s.toJSON()),
           cached: true
         };
       }
@@ -122,18 +211,18 @@ class BackgroundService {
       // Create transcript model
       const transcriptModel = Transcript.fromDOM(transcript, videoId);
 
-      // Analyze with AI
+      // Analyze with AI (passing user settings to optimize prompt)
       const analysisResult = await this.aiService.analyzeTranscript(
         transcriptModel,
-        advancedSettings
+        advancedSettings,
+        userSettings
       );
 
       // Merge overlapping segments
       const mergedResult = analysisResult.mergeOverlapping();
 
-      // Filter by user settings (enabled categories)
-      const userSettings = await this.storageService.getSettings();
-      const filteredSegments = mergedResult.getEnabledSegments(userSettings);
+      // Segments are already filtered by AI based on enabled categories
+      const filteredSegments = mergedResult.segments;
 
       // Create final result
       const finalResult = new AnalysisResult(

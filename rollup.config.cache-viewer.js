@@ -7,7 +7,7 @@ import copy from 'rollup-plugin-copy';
 export default {
   input: 'src/cache-viewer/cache-viewer-main.js',
   output: {
-    file: 'cache-viewer-bundle.js',
+    file: 'dist/cache-viewer-bundle.js',
     format: 'iife',
     sourcemap: false
   },

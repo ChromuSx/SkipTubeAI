@@ -46,8 +46,8 @@ export const CONFIG = {
   DEFAULTS: {
     SETTINGS: {
       skipSponsors: true,
-      skipIntros: false,
-      skipOutros: false,
+      skipIntros: true,
+      skipOutros: true,
       skipDonations: true,
       skipSelfPromo: true,
       skipBuffer: 0.5,

@@ -30,6 +30,7 @@ class PopupManager {
 
       // Load all data
       await Promise.all([
+        this.loadAPIKey(),
         this.loadSettings(),
         this.loadStats(),
         this.loadCacheInfo(),
@@ -210,9 +211,147 @@ class PopupManager {
   }
 
   /**
+   * Load API key from storage
+   */
+  async loadAPIKey() {
+    try {
+      const data = await chrome.storage.local.get(['apiKey']);
+
+      if (data.apiKey && data.apiKey.length >= 20) {
+        // Mask the API key for display (show first 8 and last 4 chars)
+        const maskedKey = data.apiKey.substring(0, 12) + '...' + data.apiKey.substring(data.apiKey.length - 4);
+        document.getElementById('api-key-input').value = data.apiKey;
+        this.updateAPIKeyStatus(true);
+
+        this.logger.info('API key loaded');
+      } else {
+        this.updateAPIKeyStatus(false);
+        this.logger.warn('No API key configured');
+      }
+    } catch (error) {
+      this.logger.error('Failed to load API key', { error: error.message });
+      this.updateAPIKeyStatus(false);
+    }
+  }
+
+  /**
+   * Update API key status indicator
+   * @param {boolean} isConfigured - Whether API key is configured
+   */
+  updateAPIKeyStatus(isConfigured) {
+    const statusEl = document.getElementById('api-key-status');
+
+    if (isConfigured) {
+      statusEl.textContent = 'Configured';
+      statusEl.style.background = '#00aa00';
+    } else {
+      statusEl.textContent = 'Not Configured';
+      statusEl.style.background = '#ff0000';
+    }
+  }
+
+  /**
+   * Validate API key format
+   * @param {string} apiKey - API key to validate
+   * @returns {boolean}
+   */
+  validateAPIKey(apiKey) {
+    if (!apiKey || typeof apiKey !== 'string') {
+      return false;
+    }
+
+    // Claude API keys start with 'sk-ant-'
+    if (!apiKey.startsWith('sk-ant-')) {
+      return false;
+    }
+
+    // Minimum length check
+    if (apiKey.length < 20) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Save API key
+   */
+  async saveAPIKey() {
+    try {
+      const apiKey = document.getElementById('api-key-input').value.trim();
+
+      // Validate format
+      if (!this.validateAPIKey(apiKey)) {
+        this.showToast('Invalid API key format. Must start with "sk-ant-" and be at least 20 characters', 'error', 5000);
+        return;
+      }
+
+      // Save to storage
+      await chrome.storage.local.set({ apiKey });
+
+      // Notify background service
+      chrome.runtime.sendMessage(
+        { action: 'updateAPIKey', apiKey },
+        (response) => {
+          if (chrome.runtime.lastError) {
+            this.logger.error('Failed to notify background', {
+              error: chrome.runtime.lastError.message
+            });
+            this.showToast('Failed to update background service', 'error');
+            return;
+          }
+
+          if (response && response.success) {
+            this.updateAPIKeyStatus(true);
+            this.showToast('API key saved successfully!', 'success');
+            this.logger.info('API key saved and background updated');
+          } else {
+            this.showToast('Failed to update API key', 'error');
+          }
+        }
+      );
+    } catch (error) {
+      this.logger.error('Failed to save API key', { error: error.message });
+      this.showToast('Failed to save API key', 'error');
+    }
+  }
+
+  /**
+   * Toggle API key visibility
+   */
+  toggleAPIKeyVisibility() {
+    const input = document.getElementById('api-key-input');
+    const button = document.getElementById('toggle-api-key-visibility');
+    const icon = button.querySelector('.material-icons');
+
+    if (input.type === 'password') {
+      input.type = 'text';
+      icon.textContent = 'visibility_off';
+    } else {
+      input.type = 'password';
+      icon.textContent = 'visibility';
+    }
+  }
+
+  /**
    * Setup event listeners
    */
   setupEventListeners() {
+    // API Key management
+    document.getElementById('save-api-key-btn').addEventListener('click', () => {
+      this.saveAPIKey();
+    });
+
+    document.getElementById('toggle-api-key-visibility').addEventListener('click', () => {
+      this.toggleAPIKeyVisibility();
+    });
+
+    document.getElementById('api-key-input').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        this.saveAPIKey();
+      }
+    });
+
     // Master toggle
     document.getElementById('master-toggle').addEventListener('change', (e) => {
       if (this.isLoadingSettings) return;

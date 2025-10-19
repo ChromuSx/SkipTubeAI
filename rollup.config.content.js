@@ -6,7 +6,7 @@ import terser from '@rollup/plugin-terser';
 export default {
   input: 'src/content/content-main.js',
   output: {
-    file: 'content-bundle.js',
+    file: 'dist/content-bundle.js',
     format: 'iife',
     name: 'ContentScript',
     sourcemap: false

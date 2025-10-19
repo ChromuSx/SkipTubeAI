@@ -6,7 +6,7 @@ import terser from '@rollup/plugin-terser';
 export default {
   input: 'src/background/background-main.js',
   output: {
-    file: 'background-bundle.js',
+    file: 'dist/background-bundle.js',
     format: 'iife',
     name: 'BackgroundScript',
     sourcemap: false
