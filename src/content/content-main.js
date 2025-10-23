@@ -326,7 +326,7 @@ class YouTubeSkipManager {
 
     preview.innerHTML = `
       <div style="display: flex; align-items: center; gap: 12px;">
-        <span class="material-icons" style="font-size: 20px; flex-shrink: 0; color: #f9ab00;">fast_forward</span>
+        <span style="font-size: 20px; flex-shrink: 0;">⏩</span>
         <div style="flex: 1; color: ${textColor};">
           <div style="font-weight: 500; font-size: 14px; margin-bottom: 4px;">Skipping ${segment.category}</div>
           <div style="font-size: 12px; opacity: 0.9;">In ${this.settings.skipBuffer}s</div>
@@ -361,9 +361,23 @@ class YouTubeSkipManager {
       font-family: Roboto, Arial, sans-serif;
       min-width: 300px;
       animation: yss-slideIn 0.3s cubic-bezier(0.2, 0, 0, 1);
+      transition: box-shadow 0.2s cubic-bezier(0.2, 0, 0, 1);
     `;
 
     document.body.appendChild(preview);
+
+    // Hover effect for notification
+    preview.addEventListener('mouseenter', () => {
+      preview.style.boxShadow = darkMode
+        ? '0 6px 16px rgba(0, 0, 0, 0.7), 0 2px 6px rgba(0, 0, 0, 0.5)'
+        : '0 6px 16px rgba(0, 0, 0, 0.2), 0 2px 6px rgba(0, 0, 0, 0.15)';
+    });
+
+    preview.addEventListener('mouseleave', () => {
+      preview.style.boxShadow = darkMode
+        ? '0 4px 12px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.3)'
+        : '0 4px 12px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1)';
+    });
 
     // Handle cancellation
     const cancelBtn = preview.querySelector('.yss-cancel-skip');
@@ -633,7 +647,7 @@ class YouTubeSkipManager {
         ${segment.description}
       </div>
       <div style="display: flex; align-items: center; gap: 4px; font-size: 11px; color: ${secondaryColor}; padding-top: 6px; border-top: 1px solid ${dividerColor};">
-        <span class="material-icons" style="font-size: 14px;">touch_app</span>
+        <span style="font-size: 14px;">👆</span>
         <span>Click to skip</span>
       </div>
     `;
@@ -680,12 +694,12 @@ class YouTubeSkipManager {
     // Check dark mode preference
     const { darkMode } = await chrome.storage.local.get(['darkMode']);
 
-    // Material Icons
+    // Emoji icons (more reliable than Material Icons)
     const icons = {
-      info: 'info_outline',
-      success: 'check_circle',
-      warning: 'warning',
-      error: 'error_outline'
+      info: 'ℹ️',
+      success: '✅',
+      warning: '⚠️',
+      error: '❌'
     };
 
     const borderColors = {
@@ -701,7 +715,7 @@ class YouTubeSkipManager {
 
     notification.innerHTML = `
       <div style="display: flex; align-items: center; gap: 12px;">
-        <span class="material-icons" style="font-size: 20px; flex-shrink: 0; color: ${borderColors[type]};">${icons[type]}</span>
+        <span style="font-size: 20px; flex-shrink: 0;">${icons[type]}</span>
         <span style="flex: 1; font-size: 14px; line-height: 20px; color: ${textColor};">${message}</span>
         <button class="yss-close-notification" style="background: none; border: none; color: ${closeColor}; cursor: pointer; padding: 0; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">&times;</button>
       </div>
@@ -722,7 +736,23 @@ class YouTubeSkipManager {
       min-width: 280px;
       max-width: 400px;
       animation: yss-slideIn 0.3s cubic-bezier(0.2, 0, 0, 1);
+      transition: box-shadow 0.2s cubic-bezier(0.2, 0, 0, 1);
     `;
+
+    document.body.appendChild(notification);
+
+    // Hover effect for notification
+    notification.addEventListener('mouseenter', () => {
+      notification.style.boxShadow = darkMode
+        ? '0 6px 16px rgba(0, 0, 0, 0.7), 0 2px 6px rgba(0, 0, 0, 0.5)'
+        : '0 6px 16px rgba(0, 0, 0, 0.2), 0 2px 6px rgba(0, 0, 0, 0.15)';
+    });
+
+    notification.addEventListener('mouseleave', () => {
+      notification.style.boxShadow = darkMode
+        ? '0 4px 12px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.3)'
+        : '0 4px 12px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1)';
+    });
 
     // Close button handler
     const closeBtn = notification.querySelector('.yss-close-notification');
@@ -738,8 +768,6 @@ class YouTubeSkipManager {
     closeBtn.addEventListener('mouseleave', () => {
       closeBtn.style.color = closeColor;
     });
-
-    document.body.appendChild(notification);
 
     // Auto remove after 3 seconds
     setTimeout(() => {
@@ -808,34 +836,9 @@ class YouTubeSkipManager {
   }
 }
 
-// Load Material Icons font
-const materialIconsLink = document.createElement('link');
-materialIconsLink.href = 'https://fonts.googleapis.com/icon?family=Material+Icons';
-materialIconsLink.rel = 'stylesheet';
-document.head.appendChild(materialIconsLink);
-
-// CSS Styles - Material Design 3
+// CSS Styles - Material Design 3 animations
 const style = document.createElement('style');
 style.textContent = `
-  /* Material Icons support */
-  .material-icons {
-    font-family: 'Material Icons';
-    font-weight: normal;
-    font-style: normal;
-    font-size: 24px;
-    line-height: 1;
-    letter-spacing: normal;
-    text-transform: none;
-    display: inline-block;
-    white-space: nowrap;
-    word-wrap: normal;
-    direction: ltr;
-    -webkit-font-smoothing: antialiased;
-    text-rendering: optimizeLegibility;
-    -moz-osx-font-smoothing: grayscale;
-    font-feature-settings: 'liga';
-  }
-
   /* Material Design animations */
   @keyframes yss-slideIn {
     from {
@@ -857,15 +860,6 @@ style.textContent = `
       transform: translateX(100%);
       opacity: 0;
     }
-  }
-
-  /* Notification hover effects */
-  .yss-notification {
-    transition: box-shadow 0.2s cubic-bezier(0.2, 0, 0, 1);
-  }
-
-  .yss-notification:hover {
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2), 0 2px 6px rgba(0, 0, 0, 0.15);
   }
 `;
 document.head.appendChild(style);
