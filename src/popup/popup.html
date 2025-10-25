@@ -958,6 +958,33 @@
       color: #3ea6ff !important;
     }
 
+    /* Support section */
+    .stats a > div:hover {
+      background: #f1f3f4 !important;
+      box-shadow: 0 1px 2px rgba(60, 64, 67, 0.3), 0 1px 3px rgba(60, 64, 67, 0.15) !important;
+    }
+
+    body.dark-mode .stats a > div {
+      background: #272727 !important;
+      border-color: #3a3a3a !important;
+    }
+
+    body.dark-mode .stats a > div:hover {
+      background: #3a3a3a !important;
+    }
+
+    body.dark-mode .stats a > div > div > div:first-child {
+      color: #f1f1f1 !important;
+    }
+
+    body.dark-mode .stats a > div > div > div:last-child {
+      color: #aaaaaa !important;
+    }
+
+    body.dark-mode .stats > div > p {
+      color: #aaaaaa !important;
+    }
+
     /* Dark mode toggle */
     .dark-mode-toggle {
       position: fixed;
@@ -1208,6 +1235,58 @@
         <button class="btn" id="clear-all-cache">
           <span class="material-icons" style="font-size: 18px; vertical-align: middle;">warning</span> Clear all
         </button>
+      </div>
+    </div>
+
+    <!-- Support Section -->
+    <div class="stats">
+      <h2>Support the Project</h2>
+      <div style="padding: 0 16px;">
+        <p style="font-size: 13px; color: #5f6368; line-height: 1.6; margin-bottom: 16px;">
+          SkipTube AI is free and open source. If you find it useful, consider supporting its development!
+        </p>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <a href="https://github.com/sponsors/ChromuSx" target="_blank" style="text-decoration: none;">
+            <div style="background: #f8f9fa; border: 1px solid #dadce0; border-radius: 8px; padding: 12px; display: flex; align-items: center; gap: 12px; transition: all 200ms cubic-bezier(0.2, 0, 0, 1); cursor: pointer;">
+              <span style="font-size: 24px;">💖</span>
+              <div style="flex: 1;">
+                <div style="font-size: 14px; font-weight: 500; color: #202124;">GitHub Sponsors</div>
+                <div style="font-size: 12px; color: #5f6368;">Support on GitHub</div>
+              </div>
+              <span class="material-icons" style="font-size: 20px; color: #5f6368;">arrow_forward</span>
+            </div>
+          </a>
+          <a href="https://ko-fi.com/chromus" target="_blank" style="text-decoration: none;">
+            <div style="background: #f8f9fa; border: 1px solid #dadce0; border-radius: 8px; padding: 12px; display: flex; align-items: center; gap: 12px; transition: all 200ms cubic-bezier(0.2, 0, 0, 1); cursor: pointer;">
+              <span style="font-size: 24px;">☕</span>
+              <div style="flex: 1;">
+                <div style="font-size: 14px; font-weight: 500; color: #202124;">Ko-fi</div>
+                <div style="font-size: 12px; color: #5f6368;">Buy me a coffee</div>
+              </div>
+              <span class="material-icons" style="font-size: 20px; color: #5f6368;">arrow_forward</span>
+            </div>
+          </a>
+          <a href="https://buymeacoffee.com/chromus" target="_blank" style="text-decoration: none;">
+            <div style="background: #f8f9fa; border: 1px solid #dadce0; border-radius: 8px; padding: 12px; display: flex; align-items: center; gap: 12px; transition: all 200ms cubic-bezier(0.2, 0, 0, 1); cursor: pointer;">
+              <span style="font-size: 24px;">🎉</span>
+              <div style="flex: 1;">
+                <div style="font-size: 14px; font-weight: 500; color: #202124;">Buy Me a Coffee</div>
+                <div style="font-size: 12px; color: #5f6368;">One-time support</div>
+              </div>
+              <span class="material-icons" style="font-size: 20px; color: #5f6368;">arrow_forward</span>
+            </div>
+          </a>
+          <a href="https://www.paypal.com/paypalme/giovanniguarino1999" target="_blank" style="text-decoration: none;">
+            <div style="background: #f8f9fa; border: 1px solid #dadce0; border-radius: 8px; padding: 12px; display: flex; align-items: center; gap: 12px; transition: all 200ms cubic-bezier(0.2, 0, 0, 1); cursor: pointer;">
+              <span style="font-size: 24px;">💳</span>
+              <div style="flex: 1;">
+                <div style="font-size: 14px; font-weight: 500; color: #202124;">PayPal</div>
+                <div style="font-size: 12px; color: #5f6368;">Donate via PayPal</div>
+              </div>
+              <span class="material-icons" style="font-size: 20px; color: #5f6368;">arrow_forward</span>
+            </div>
+          </a>
+        </div>
       </div>
     </div>
 

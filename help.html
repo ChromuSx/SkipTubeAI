@@ -270,6 +270,29 @@
       background: #f1f1f1;
       color: #0f0f0f;
     }
+
+    /* Support cards hover effects */
+    .section a > div:hover {
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      transform: translateY(-2px);
+    }
+
+    body.dark-mode .section a > div {
+      background: #272727;
+      border-color: #3a3a3a;
+    }
+
+    body.dark-mode .section a > div:hover {
+      background: #2a2a2a;
+    }
+
+    body.dark-mode .section a > div > div:nth-child(2) {
+      color: #3ea6ff;
+    }
+
+    body.dark-mode .section a > div > div:nth-child(3) {
+      color: #aaaaaa;
+    }
   </style>
 </head>
 <body>
@@ -412,6 +435,46 @@
         <li><strong>Email:</strong> giovanni.guarino1999@gmail.com</li>
         <li><strong>Privacy Policy:</strong> <a href="https://github.com/ChromuSx/SkipTubeAI/blob/main/PRIVACY.md" target="_blank">Read our privacy policy</a></li>
       </ul>
+
+      <h3 style="margin-top: 32px; display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 24px;">💖</span> Support the Project
+      </h3>
+      <p>SkipTube AI is completely <strong>free and open source</strong>. If you find it useful and would like to support its continued development and updates, consider making a donation. Your support helps keep the project alive and motivates me to add new features and improvements!</p>
+
+      <div class="note">
+        <p><strong>Every contribution, no matter how small, is greatly appreciated!</strong></p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px;">
+        <a href="https://github.com/sponsors/ChromuSx" target="_blank" style="text-decoration: none;">
+          <div style="background: #f8f9fa; border: 1px solid #dadce0; border-radius: 8px; padding: 16px; text-align: center; transition: all 0.2s; height: 100%;">
+            <div style="font-size: 32px; margin-bottom: 8px;">💖</div>
+            <div style="font-size: 16px; font-weight: 500; color: #1a73e8; margin-bottom: 4px;">GitHub Sponsors</div>
+            <div style="font-size: 13px; color: #5f6368;">Monthly or one-time support</div>
+          </div>
+        </a>
+        <a href="https://ko-fi.com/chromus" target="_blank" style="text-decoration: none;">
+          <div style="background: #f8f9fa; border: 1px solid #dadce0; border-radius: 8px; padding: 16px; text-align: center; transition: all 0.2s; height: 100%;">
+            <div style="font-size: 32px; margin-bottom: 8px;">☕</div>
+            <div style="font-size: 16px; font-weight: 500; color: #1a73e8; margin-bottom: 4px;">Ko-fi</div>
+            <div style="font-size: 13px; color: #5f6368;">Buy me a coffee</div>
+          </div>
+        </a>
+        <a href="https://buymeacoffee.com/chromus" target="_blank" style="text-decoration: none;">
+          <div style="background: #f8f9fa; border: 1px solid #dadce0; border-radius: 8px; padding: 16px; text-align: center; transition: all 0.2s; height: 100%;">
+            <div style="font-size: 32px; margin-bottom: 8px;">🎉</div>
+            <div style="font-size: 16px; font-weight: 500; color: #1a73e8; margin-bottom: 4px;">Buy Me a Coffee</div>
+            <div style="font-size: 13px; color: #5f6368;">One-time support</div>
+          </div>
+        </a>
+        <a href="https://www.paypal.com/paypalme/giovanniguarino1999" target="_blank" style="text-decoration: none;">
+          <div style="background: #f8f9fa; border: 1px solid #dadce0; border-radius: 8px; padding: 16px; text-align: center; transition: all 0.2s; height: 100%;">
+            <div style="font-size: 32px; margin-bottom: 8px;">💳</div>
+            <div style="font-size: 16px; font-weight: 500; color: #1a73e8; margin-bottom: 4px;">PayPal</div>
+            <div style="font-size: 13px; color: #5f6368;">Donate via PayPal</div>
+          </div>
+        </a>
+      </div>
     </div>
   </div>
 
