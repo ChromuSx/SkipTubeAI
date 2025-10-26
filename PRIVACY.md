@@ -1,7 +1,5 @@
 # Privacy Policy for SkipTube AI
 
-**Last Updated:** October 19, 2024
-
 ## Introduction
 
 SkipTube AI ("the Extension") is a Chrome browser extension that uses artificial intelligence to analyze YouTube video transcripts and automatically skip sponsorships, intros, outros, and other content segments. This Privacy Policy explains how we collect, use, and protect your information.
@@ -15,10 +13,10 @@ The Extension extracts publicly available transcripts/subtitles from YouTube vid
 - No personal information about you
 
 ### 2. API Key
-You provide your own Claude AI API key from Anthropic, which is:
+You provide your own API key (Claude AI from Anthropic or OpenAI), which is:
 - Stored locally in your browser using Chrome's storage API
-- Never transmitted to us or any third party (except Anthropic's API)
-- Used only to authenticate requests to Claude AI
+- Never transmitted to us or any third party (except your chosen AI provider's API)
+- Used only to authenticate requests to your selected AI provider
 
 ### 3. Extension Settings
 Your preferences are stored locally, including:
@@ -41,7 +39,7 @@ Basic statistics tracked locally only:
 ## How We Use Your Information
 
 ### Video Transcript Analysis
-- Transcripts are sent to Anthropic's Claude AI API for analysis
+- Transcripts are sent to your chosen AI provider (Anthropic's Claude AI or OpenAI) for analysis
 - The AI identifies sponsorships, intros, outros, and promotional content
 - Results are cached locally to avoid repeat analysis
 
@@ -52,10 +50,18 @@ Basic statistics tracked locally only:
 
 ## Third-Party Services
 
-### Anthropic (Claude AI)
+### AI Providers
+
+#### Anthropic (Claude AI)
 - **What we share:** Video transcripts and your API key
 - **Purpose:** AI-powered content analysis
 - **Their privacy policy:** https://www.anthropic.com/legal/privacy
+- **Your control:** You provide and control your own API key
+
+#### OpenAI
+- **What we share:** Video transcripts and your API key
+- **Purpose:** AI-powered content analysis (alternative provider)
+- **Their privacy policy:** https://openai.com/privacy
 - **Your control:** You provide and control your own API key
 
 ### YouTube
@@ -77,7 +83,7 @@ We do not operate any servers or databases. We do not:
 - Collect your personal information
 - Track your browsing history
 - Store your data on remote servers
-- Share your data with third parties (except Anthropic's API for analysis)
+- Share your data with third parties (except your chosen AI provider's API for analysis)
 
 ### Data Retention
 - **API Key:** Stored until you remove it or uninstall the extension
@@ -115,11 +121,11 @@ We may update this Privacy Policy from time to time. Changes will be reflected b
 
 We do not sell, trade, or otherwise transfer your information to third parties, except:
 
-### Anthropic Claude AI (Required for Functionality)
-- Video transcripts are sent to Anthropic's API for analysis
+### AI Providers (Required for Functionality)
+- Video transcripts are sent to your chosen AI provider (Anthropic Claude AI or OpenAI) for analysis
 - Communication is encrypted (HTTPS)
-- Subject to Anthropic's privacy policy
-- You control this by providing your own API key
+- Subject to the respective provider's privacy policy
+- You control this by providing your own API key and selecting your preferred provider
 
 ### Legal Requirements
 We may disclose information if required by law, but since we don't collect or store user data on servers, there is typically nothing to disclose.
@@ -141,12 +147,14 @@ The Extension requests the following Chrome permissions:
   - **Purpose:** Extract transcripts from YouTube pages
 - `https://api.anthropic.com/*`
   - **Purpose:** Send transcripts to Claude AI for analysis
+- `https://api.openai.com/*`
+  - **Purpose:** Send transcripts to OpenAI for analysis (alternative provider)
 
 ## International Users
 
 The Extension can be used globally. However:
-- Anthropic's API may have geographic restrictions
-- Data sent to Anthropic's API is subject to their data handling practices
+- AI providers (Anthropic and OpenAI) may have geographic restrictions
+- Data sent to AI providers is subject to their respective data handling practices
 - Your API key and settings remain local to your device regardless of location
 
 ## Contact Information
@@ -169,7 +177,7 @@ By installing and using SkipTube AI, you consent to this Privacy Policy.
 ## Summary (TL;DR)
 
 - ✅ All your data stored locally on your device
-- ✅ Only video transcripts sent to Anthropic for AI analysis (using your API key)
+- ✅ Only video transcripts sent to your chosen AI provider (Anthropic or OpenAI) for analysis (using your API key)
 - ✅ No tracking, no analytics, no third-party data sharing
 - ✅ You control your API key and can delete all data anytime
 - ✅ Open source - verify our claims by reviewing the code
