@@ -311,7 +311,9 @@
       <p>Follow these simple steps to start using SkipTube AI:</p>
 
       <h3><span class="step-number">1</span> Get Your API Key</h3>
-      <p>You need a Claude AI API key from Anthropic:</p>
+      <p>You need an API key from one of the supported AI providers:</p>
+
+      <h4 style="margin-top: 16px; margin-bottom: 8px; color: #1a73e8; font-size: 16px;">Option 1: Anthropic Claude (Recommended)</h4>
       <ol>
         <li>Go to <a href="https://console.anthropic.com/" target="_blank">console.anthropic.com</a></li>
         <li>Create an account or log in</li>
@@ -319,15 +321,25 @@
         <li>Create a new API key and copy it</li>
       </ol>
 
+      <h4 style="margin-top: 16px; margin-bottom: 8px; color: #1a73e8; font-size: 16px;">Option 2: OpenAI GPT</h4>
+      <ol>
+        <li>Go to <a href="https://platform.openai.com/" target="_blank">platform.openai.com</a></li>
+        <li>Create an account or log in</li>
+        <li>Navigate to API Keys section</li>
+        <li>Create a new API key and copy it</li>
+      </ol>
+
       <div class="note">
-        <p><strong>Note:</strong> Your API key is stored locally in your browser and never shared with anyone except Anthropic's API for video analysis.</p>
+        <p><strong>Note:</strong> Your API key is stored locally in your browser and never shared with anyone except the selected AI provider's API for video analysis.</p>
       </div>
 
       <h3><span class="step-number">2</span> Configure the Extension</h3>
       <ol>
         <li>Click the SkipTube AI extension icon in your browser</li>
-        <li>Paste your API key in the settings</li>
-        <li>Choose which content types you want to skip (Sponsors, Intros, Outros, etc.)</li>
+        <li>Select your preferred AI provider (Anthropic Claude or OpenAI GPT)</li>
+        <li>Paste your API key in the corresponding field</li>
+        <li>Choose your preferred model (Haiku/Sonnet for Claude, GPT-4o/GPT-4o-mini for OpenAI)</li>
+        <li>Select which content types you want to skip (Sponsors, Intros, Outros, etc.)</li>
         <li>Save your settings</li>
       </ol>
 
@@ -354,6 +366,8 @@
 
       <h3>Advanced Settings</h3>
       <ul>
+        <li><strong>AI Provider:</strong> Choose between Anthropic Claude or OpenAI GPT</li>
+        <li><strong>AI Model:</strong> Select model (Haiku/Sonnet for Claude, GPT-4o/GPT-4o-mini for OpenAI)</li>
         <li><strong>Skip Buffer:</strong> Time in seconds before segment to start skipping (default: 0.5s)</li>
         <li><strong>Confidence Threshold:</strong> AI confidence level required to skip (0-1, default: 0.85)</li>
         <li><strong>Channel Whitelist:</strong> Add channels to exclude from analysis</li>
@@ -369,8 +383,8 @@
       </h2>
       <ol>
         <li>When you watch a YouTube video, the extension extracts the video transcript</li>
-        <li>The transcript is sent to Claude AI for analysis</li>
-        <li>AI identifies sponsorships, intros, outros, and other segments</li>
+        <li>The transcript is sent to your selected AI provider (Claude or OpenAI) for analysis</li>
+        <li>The AI identifies sponsorships, intros, outros, and other segments</li>
         <li>Results are cached locally to avoid re-analyzing the same video</li>
         <li>The extension automatically skips identified segments based on your preferences</li>
       </ol>
@@ -394,12 +408,17 @@
 
       <div class="faq-item">
         <div class="faq-question">Q: Is my data private?</div>
-        <div class="faq-answer">A: Yes! All settings and cache are stored locally on your device. Only video transcripts are sent to Anthropic's API for analysis. See our <a href="https://github.com/ChromuSx/SkipTubeAI/blob/main/PRIVACY.md" target="_blank">Privacy Policy</a> for details.</div>
+        <div class="faq-answer">A: Yes! All settings and cache are stored locally on your device. Only video transcripts are sent to your selected AI provider's API for analysis. See our <a href="https://github.com/ChromuSx/SkipTubeAI/blob/main/PRIVACY.md" target="_blank">Privacy Policy</a> for details.</div>
       </div>
 
       <div class="faq-item">
         <div class="faq-question">Q: Does this cost money?</div>
-        <div class="faq-answer">A: You need to pay for Claude AI API usage through Anthropic. The cost is very low (typically fractions of a cent per video). The extension itself is free and open source.</div>
+        <div class="faq-answer">A: You need to pay for AI API usage through your chosen provider (Anthropic for Claude or OpenAI for GPT). The cost is very low (typically fractions of a cent per video). The extension itself is free and open source.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">Q: Which AI provider should I choose?</div>
+        <div class="faq-answer">A: Both Claude and OpenAI work great! Claude (Haiku model) is generally faster and cheaper, while GPT-4o might provide slightly more accurate results. We recommend starting with Claude Haiku for the best balance of speed and cost.</div>
       </div>
 
       <div class="faq-item">

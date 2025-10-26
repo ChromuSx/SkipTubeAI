@@ -33,8 +33,8 @@ export default {
         // HTML files
         { src: 'src/popup/popup.html', dest: 'dist' },
         { src: 'src/cache-viewer/cache-viewer.html', dest: 'dist' },
-        { src: 'src/help.html', dest: 'dist' },
-        { src: 'src/help.js', dest: 'dist' },
+        { src: 'src/help/help.html', dest: 'dist' },
+        { src: 'src/help/help.js', dest: 'dist' },
         // Manifest and assets
         { src: 'src/manifest.json', dest: 'dist' },
         { src: 'src/icons', dest: 'dist' },

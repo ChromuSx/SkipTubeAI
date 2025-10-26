@@ -214,6 +214,10 @@ SkipTubeAI/
 │   │   ├── cache-viewer.html           # Cache viewer UI
 │   │   └── cache-viewer-main.js        # Cache viewer logic
 │   │
+│   ├── help/                           # Help page
+│   │   ├── help.html                   # Help page UI
+│   │   └── help.js                     # Help page script
+│   │
 │   ├── shared/                         # Shared modules
 │   │   ├── config.js                   # Configuration constants
 │   │   ├── constants.js                # Application constants
@@ -259,8 +263,6 @@ SkipTubeAI/
 │   │           └── openai-provider.js  # OpenAI GPT
 │   │
 │   ├── manifest.json                   # Chrome extension manifest
-│   ├── help.html                       # Help page
-│   ├── help.js                         # Help page script
 │   ├── icons/                          # Extension icons
 │   └── logo.png                        # Extension logo
 │
@@ -268,8 +270,8 @@ SkipTubeAI/
 │   ├── manifest.json                   # Copied from src/
 │   ├── popup.html                      # Copied from src/popup/
 │   ├── cache-viewer.html               # Copied from src/cache-viewer/
-│   ├── help.html                       # Copied from src/
-│   ├── help.js                         # Copied from src/
+│   ├── help.html                       # Copied from src/help/
+│   ├── help.js                         # Copied from src/help/
 │   ├── icons/                          # Copied from src/
 │   ├── logo.png                        # Copied from src/
 │   ├── background-bundle.js            # Compiled from src/background/
