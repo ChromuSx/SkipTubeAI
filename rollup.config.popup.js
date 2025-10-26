@@ -30,7 +30,15 @@ export default {
     }),
     copy({
       targets: [
-        { src: 'src/popup/popup.html', dest: '.' }
+        // HTML files
+        { src: 'src/popup/popup.html', dest: 'dist' },
+        { src: 'src/cache-viewer/cache-viewer.html', dest: 'dist' },
+        { src: 'src/help.html', dest: 'dist' },
+        { src: 'src/help.js', dest: 'dist' },
+        // Manifest and assets
+        { src: 'src/manifest.json', dest: 'dist' },
+        { src: 'src/icons', dest: 'dist' },
+        { src: 'src/logo.png', dest: 'dist' }
       ],
       hook: 'writeBundle'
     })

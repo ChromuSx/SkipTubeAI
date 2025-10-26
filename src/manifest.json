@@ -10,15 +10,16 @@
   "host_permissions": [
     "https://www.youtube.com/*",
     "https://youtube.com/*",
-    "https://api.anthropic.com/*"
+    "https://api.anthropic.com/*",
+    "https://api.openai.com/*"
   ],
   "background": {
-    "service_worker": "dist/background-bundle.js"
+    "service_worker": "background-bundle.js"
   },
   "content_scripts": [
     {
       "matches": ["https://www.youtube.com/*"],
-      "js": ["dist/content-bundle.js"],
+      "js": ["content-bundle.js"],
       "run_at": "document_idle"
     }
   ],

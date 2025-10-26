@@ -2,9 +2,11 @@
 
 import { logger, LogLevel } from '../shared/logger/index.js';
 import { AIService } from '../shared/services/ai-service.js';
+import { createProvider } from '../shared/services/providers/index.js';
 import { StorageService } from '../shared/services/storage-service.js';
 import { AnalyticsService } from '../shared/services/analytics-service.js';
 import { Transcript, AnalysisResult } from '../shared/models/index.js';
+import { CONFIG } from '../shared/config.js';
 import {
   APIKeyError,
   TranscriptNotAvailableError,
@@ -17,15 +19,18 @@ import {
 class BackgroundService {
   constructor() {
     // API Configuration
-    this.API_KEY = null;
-    this.API_ENDPOINT = 'https://api.anthropic.com/v1/messages';
+    this.API_KEYS = {
+      claude: null,
+      openai: null
+    };
+    this.selectedProvider = 'claude'; // Default provider
 
     // Initialize services
     this.logger = logger.child('BackgroundService');
     this.storageService = new StorageService();
     this.analyticsService = new AnalyticsService();
 
-    // AI service will be initialized after loading API key
+    // AI service will be initialized after loading API keys
     this.aiService = null;
 
     // Initialize async
@@ -44,7 +49,10 @@ class BackgroundService {
       this.schedulePeriodicMaintenance();
 
       this.logger.info('Background service initialized', {
-        hasAPIKey: !!this.API_KEY
+        selectedProvider: this.selectedProvider,
+        hasClaudeKey: !!this.API_KEYS.claude,
+        hasOpenAIKey: !!this.API_KEYS.openai,
+        hasAIService: !!this.aiService
       });
     } catch (error) {
       this.logger.error('Failed to initialize background service', {
@@ -54,26 +62,105 @@ class BackgroundService {
   }
 
   /**
-   * Load API key from storage
+   * Load API keys and provider selection from storage
    */
   async loadAPIKey() {
     try {
-      const data = await chrome.storage.local.get(['apiKey']);
+      // Load settings to get provider selection
+      const advancedSettings = await this.storageService.getAdvancedSettings();
+      this.selectedProvider = advancedSettings.aiProvider || 'claude';
 
-      if (data.apiKey && data.apiKey.length >= 20) {
-        this.API_KEY = data.apiKey;
+      // Load API keys for both providers
+      const data = await chrome.storage.local.get(['claudeApiKey', 'openaiApiKey', 'apiKey']);
 
-        // Initialize AI service with the loaded key
-        this.aiService = new AIService(this.API_KEY, this.API_ENDPOINT);
-
-        this.logger.info('API key loaded successfully');
-      } else {
-        this.logger.warn('No valid API key found in storage');
+      // Handle legacy single API key (assumed to be Claude)
+      if (data.apiKey && data.apiKey.length >= 20 && !data.claudeApiKey) {
+        this.API_KEYS.claude = data.apiKey;
+        // Migrate to new format
+        await chrome.storage.local.set({ claudeApiKey: data.apiKey });
+        await chrome.storage.local.remove('apiKey');
+        this.logger.info('Migrated legacy API key to Claude key');
       }
+
+      // Load provider-specific keys
+      if (data.claudeApiKey && data.claudeApiKey.length >= 20) {
+        this.API_KEYS.claude = data.claudeApiKey;
+        this.logger.info('Claude API key loaded');
+      }
+
+      if (data.openaiApiKey && data.openaiApiKey.length >= 20) {
+        this.API_KEYS.openai = data.openaiApiKey;
+        this.logger.info('OpenAI API key loaded');
+      }
+
+      // Initialize AI service with selected provider
+      await this.initializeAIService();
+
     } catch (error) {
-      this.logger.error('Failed to load API key', {
+      this.logger.error('Failed to load API keys', {
         error: error.message
       });
+    }
+  }
+
+  /**
+   * Initialize AI service with selected provider
+   */
+  async initializeAIService() {
+    try {
+      this.logger.debug('Starting AI service initialization', {
+        provider: this.selectedProvider
+      });
+
+      const apiKey = this.API_KEYS[this.selectedProvider];
+
+      if (!apiKey || apiKey.length < 20) {
+        this.logger.warn(`No valid API key for provider: ${this.selectedProvider}`);
+        this.aiService = null;
+        return;
+      }
+
+      this.logger.debug('API key found, creating provider', {
+        provider: this.selectedProvider,
+        keyLength: apiKey.length
+      });
+
+      // Get provider config
+      const providerConfig = this.selectedProvider === 'claude'
+        ? CONFIG.AI_PROVIDERS.CLAUDE
+        : CONFIG.AI_PROVIDERS.OPENAI;
+
+      this.logger.debug('Provider config loaded', {
+        endpoint: providerConfig.ENDPOINT
+      });
+
+      // Create provider instance
+      const provider = createProvider(
+        this.selectedProvider,
+        apiKey,
+        {
+          baseUrl: providerConfig.ENDPOINT,
+          timeout: providerConfig.TIMEOUT,
+          version: providerConfig.VERSION
+        }
+      );
+
+      this.logger.debug('Provider instance created');
+
+      // Initialize AI service with provider
+      this.aiService = new AIService(provider);
+
+      this.logger.info('AI service initialized successfully', {
+        provider: this.selectedProvider
+      });
+
+    } catch (error) {
+      this.logger.error('Failed to initialize AI service', {
+        error: error.message,
+        stack: error.stack,
+        provider: this.selectedProvider
+      });
+      this.aiService = null;
     }
   }
 
@@ -104,7 +191,7 @@ class BackgroundService {
       }
 
       if (request.action === 'updateAPIKey') {
-        this.handleAPIKeyUpdate(request.apiKey)
+        this.handleAPIKeyUpdate(request.data || request.apiKey)
           .then(() => sendResponse({ success: true }))
           .catch(error => {
             this.logger.error('API key update failed', {
@@ -118,10 +205,30 @@ class BackgroundService {
         return true; // Keep channel open for async response
       }
 
+      if (request.action === 'updateProvider') {
+        this.handleProviderChange(request.provider)
+          .then(() => sendResponse({ success: true }))
+          .catch(error => {
+            this.logger.error('Provider update failed', {
+              error: error.message
+            });
+            sendResponse({
+              success: false,
+              error: error.message
+            });
+          });
+        return true; // Keep channel open for async response
+      }
+
       if (request.action === 'getAPIKeyStatus') {
         sendResponse({
-          configured: !!this.API_KEY,
-          hasAIService: !!this.aiService
+          configured: !!(this.API_KEYS[this.selectedProvider]),
+          hasAIService: !!this.aiService,
+          selectedProvider: this.selectedProvider,
+          availableKeys: {
+            claude: !!this.API_KEYS.claude,
+            openai: !!this.API_KEYS.openai
+          }
         });
         return false;
       }
@@ -134,22 +241,60 @@ class BackgroundService {
 
   /**
    * Handle API key update
-   * @param {string} newKey - New API key
+   * @param {Object} data - Update data {provider, apiKey} or legacy {apiKey}
    */
-  async handleAPIKeyUpdate(newKey) {
+  async handleAPIKeyUpdate(data) {
     try {
-      if (!newKey || newKey.length < 20) {
+      // Handle legacy format (single apiKey)
+      if (typeof data === 'string') {
+        data = { provider: 'claude', apiKey: data };
+      }
+
+      const { provider, apiKey } = data;
+
+      if (!apiKey || apiKey.length < 20) {
         throw new APIKeyError('Invalid API key format');
       }
 
-      this.API_KEY = newKey;
+      if (!['claude', 'openai'].includes(provider)) {
+        throw new APIKeyError('Invalid provider');
+      }
 
-      // Reinitialize AI service with new key
-      this.aiService = new AIService(this.API_KEY, this.API_ENDPOINT);
+      // Update API key for provider
+      this.API_KEYS[provider] = apiKey;
 
-      this.logger.info('API key updated successfully');
+      // If updating the currently selected provider, reinitialize
+      if (provider === this.selectedProvider) {
+        await this.initializeAIService();
+      }
+
+      this.logger.info('API key updated successfully', { provider });
     } catch (error) {
       this.logger.error('Failed to update API key', {
+        error: error.message
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Handle provider change
+   * @param {string} newProvider - New provider selection
+   */
+  async handleProviderChange(newProvider) {
+    try {
+      if (!['claude', 'openai'].includes(newProvider)) {
+        throw new Error('Invalid provider');
+      }
+
+      this.selectedProvider = newProvider;
+
+      // Reinitialize AI service with new provider
+      await this.initializeAIService();
+
+      this.logger.info('Provider changed successfully', { provider: newProvider });
+    } catch (error) {
+      this.logger.error('Failed to change provider', {
         error: error.message
       });
       throw error;
@@ -174,10 +319,15 @@ class BackgroundService {
       });
 
       // Verify AI service is available
-      if (!this.aiService || !this.API_KEY) {
+      if (!this.aiService) {
+        const providerName = this.selectedProvider === 'claude' ? 'Claude' : 'OpenAI';
+        const consoleUrl = this.selectedProvider === 'claude'
+          ? 'https://console.anthropic.com/settings/keys'
+          : 'https://platform.openai.com/api-keys';
+
         throw new APIKeyError(
-          'API key not configured. Please open the extension popup and enter your Claude API key. ' +
-          'Get your API key from https://console.anthropic.com/settings/keys'
+          `API key not configured. Please open the extension popup and enter your ${providerName} API key. ` +
+          `Get your API key from ${consoleUrl}`
         );
       }
 

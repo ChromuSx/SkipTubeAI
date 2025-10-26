@@ -1,6 +1,30 @@
 // config.js - Centralized configuration
 export const CONFIG = {
-  // API Configuration
+  // AI Provider Configuration
+  AI_PROVIDERS: {
+    CLAUDE: {
+      NAME: 'claude',
+      ENDPOINT: 'https://api.anthropic.com/v1/messages',
+      VERSION: '2023-06-01',
+      TIMEOUT: 60000,
+      MODELS: {
+        HAIKU: 'claude-3-5-haiku-20241022',
+        SONNET: 'claude-sonnet-4-5-20250929'
+      }
+    },
+    OPENAI: {
+      NAME: 'openai',
+      ENDPOINT: 'https://api.openai.com/v1/chat/completions',
+      TIMEOUT: 60000,
+      MODELS: {
+        GPT_4O: 'gpt-4o',
+        GPT_4O_MINI: 'gpt-4o-mini',
+        GPT_4_TURBO: 'gpt-4-turbo'
+      }
+    }
+  },
+
+  // Legacy API Configuration (for backwards compatibility)
   API: {
     ENDPOINT: 'https://api.anthropic.com/v1/messages',
     VERSION: '2023-06-01',
@@ -56,6 +80,7 @@ export const CONFIG = {
     },
     ADVANCED_SETTINGS: {
       confidenceThreshold: 0.85,
+      aiProvider: 'claude', // 'claude' or 'openai'
       aiModel: 'haiku',
       skipBuffer: 0.5,
       channelWhitelist: []

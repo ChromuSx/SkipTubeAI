@@ -1048,25 +1048,65 @@
     <div class="settings" id="api-key-section">
       <h2><span class="material-icons" style="font-size: 14px; vertical-align: middle;">vpn_key</span> API Configuration</h2>
 
-      <div class="setting-item" style="flex-direction: column; align-items: stretch; padding: 16px;">
+      <!-- AI Provider Selection -->
+      <div class="setting-item">
+        <div class="setting-label">
+          <span class="material-icons setting-icon">cloud</span>
+          <span>AI Provider</span>
+        </div>
+        <select id="ai-provider-select" style="padding: 6px 12px; border-radius: 16px; border: 1px solid #ccc; background: #f9f9f9; font-size: 13px; cursor: pointer; font-family: 'Roboto', 'Arial', sans-serif;">
+          <option value="claude">Anthropic Claude</option>
+          <option value="openai">OpenAI GPT</option>
+        </select>
+      </div>
+
+      <!-- Claude API Key Configuration -->
+      <div id="claude-api-key-section" class="setting-item" style="flex-direction: column; align-items: stretch; padding: 16px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
           <span style="font-size: 14px; color: #0f0f0f; font-weight: 500;">Claude API Key</span>
-          <span id="api-key-status" style="font-size: 12px; padding: 4px 8px; border-radius: 12px; background: #ff0000; color: white; font-weight: 500;">Not Configured</span>
+          <span id="claude-api-key-status" style="font-size: 12px; padding: 4px 8px; border-radius: 12px; background: #ff0000; color: white; font-weight: 500;">Not Configured</span>
         </div>
 
         <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-          <input type="password" id="api-key-input" placeholder="sk-ant-api03-..."
+          <input type="password" id="claude-api-key-input" placeholder="sk-ant-api03-..."
                  style="flex: 1; padding: 10px 12px; border: 2px solid #e5e5e5; border-radius: 8px; font-size: 13px; font-family: 'Roboto', monospace;">
-          <button id="toggle-api-key-visibility" style="padding: 10px 12px; border: 2px solid #e5e5e5; border-radius: 8px; background: #f9f9f9; cursor: pointer; font-size: 18px;">
+          <button id="toggle-claude-api-key-visibility" class="toggle-api-visibility" style="padding: 10px 12px; border: 2px solid #e5e5e5; border-radius: 8px; background: #f9f9f9; cursor: pointer; font-size: 18px;">
             <span class="material-icons" style="font-size: 20px; vertical-align: middle;">visibility</span>
           </button>
-          <button id="save-api-key-btn" class="btn primary" style="padding: 10px 20px; white-space: nowrap;">
+          <button id="save-claude-api-key-btn" class="btn primary" style="padding: 10px 20px; white-space: nowrap;">
             Save
           </button>
         </div>
 
         <div style="font-size: 12px; color: #606060; line-height: 1.5;">
           <p style="margin: 0 0 8px 0;">Get your API key from <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color: #065fd4; text-decoration: none;">Anthropic Console</a></p>
+          <p style="margin: 0; display: flex; align-items: center; gap: 6px;">
+            <span class="material-icons" style="font-size: 14px; color: #5f6368;">lock</span>
+            Your API key is stored locally and never shared
+          </p>
+        </div>
+      </div>
+
+      <!-- OpenAI API Key Configuration -->
+      <div id="openai-api-key-section" class="setting-item" style="flex-direction: column; align-items: stretch; padding: 16px; display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <span style="font-size: 14px; color: #0f0f0f; font-weight: 500;">OpenAI API Key</span>
+          <span id="openai-api-key-status" style="font-size: 12px; padding: 4px 8px; border-radius: 12px; background: #ff0000; color: white; font-weight: 500;">Not Configured</span>
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+          <input type="password" id="openai-api-key-input" placeholder="sk-..."
+                 style="flex: 1; padding: 10px 12px; border: 2px solid #e5e5e5; border-radius: 8px; font-size: 13px; font-family: 'Roboto', monospace;">
+          <button id="toggle-openai-api-key-visibility" class="toggle-api-visibility" style="padding: 10px 12px; border: 2px solid #e5e5e5; border-radius: 8px; background: #f9f9f9; cursor: pointer; font-size: 18px;">
+            <span class="material-icons" style="font-size: 20px; vertical-align: middle;">visibility</span>
+          </button>
+          <button id="save-openai-api-key-btn" class="btn primary" style="padding: 10px 20px; white-space: nowrap;">
+            Save
+          </button>
+        </div>
+
+        <div style="font-size: 12px; color: #606060; line-height: 1.5;">
+          <p style="margin: 0 0 8px 0;">Get your API key from <a href="https://platform.openai.com/api-keys" target="_blank" style="color: #065fd4; text-decoration: none;">OpenAI Platform</a></p>
           <p style="margin: 0; display: flex; align-items: center; gap: 6px;">
             <span class="material-icons" style="font-size: 14px; color: #5f6368;">lock</span>
             Your API key is stored locally and never shared
@@ -1169,8 +1209,13 @@
           <span>AI Model</span>
         </div>
         <select id="ai-model" style="padding: 6px 12px; border-radius: 16px; border: 1px solid #ccc; background: #f9f9f9; font-size: 13px; cursor: pointer; font-family: 'Roboto', 'Arial', sans-serif;">
-          <option value="haiku">Haiku (fast)</option>
-          <option value="sonnet">Sonnet (accurate)</option>
+          <!-- Claude Models -->
+          <option value="haiku" data-provider="claude">Haiku (Fast)</option>
+          <option value="sonnet" data-provider="claude">Sonnet (Accurate)</option>
+          <!-- OpenAI Models -->
+          <option value="gpt-4o" data-provider="openai" style="display:none;">GPT-4o (Best)</option>
+          <option value="gpt-4o-mini" data-provider="openai" style="display:none;">GPT-4o Mini (Fast)</option>
+          <option value="gpt-4-turbo" data-provider="openai" style="display:none;">GPT-4 Turbo (Balanced)</option>
         </select>
       </div>
 
@@ -1344,6 +1389,6 @@
     <span class="material-icons">dark_mode</span>
   </button>
 
-  <script src="dist/popup-bundle.js"></script>
+  <script src="popup-bundle.js"></script>
 </body>
 </html>

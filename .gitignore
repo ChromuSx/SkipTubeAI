@@ -6,14 +6,10 @@ node_modules/
 package-lock.json
 yarn.lock
 
-# Build output
+# Build output (all generated files go to dist/)
 dist/
 *.bundle.js
 *.bundle.js.map
-
-# Generated HTML files (copied from src/ during build)
-/popup.html
-/cache-viewer.html
 
 # TypeScript
 *.tsbuildinfo

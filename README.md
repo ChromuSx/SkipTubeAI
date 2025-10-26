@@ -4,7 +4,7 @@
 
 <img src="icons/icon128.png" alt="SkipTube AI Logo" width="128">
 
-**AI-powered Chrome extension that automatically detects and skips sponsorships, intros, outros, and promotional content in YouTube videos using Claude AI.**
+**AI-powered Chrome extension that automatically detects and skips sponsorships, intros, outros, and promotional content in YouTube videos using Claude AI or OpenAI.**
 
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/ChromuSx/SkipTubeAI/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -24,7 +24,8 @@
 
 ## 🚀 Features
 
-- **🤖 AI-Powered Detection**: Uses Claude AI to analyze video transcripts with high accuracy
+- **🤖 Multiple AI Providers**: Choose between Anthropic Claude or OpenAI GPT for transcript analysis
+- **🎯 Smart Model Selection**: Pick the best model for your needs (Haiku/Sonnet for Claude, GPT-4o/4o-mini for OpenAI)
 - **⚡ Automatic Skipping**: Seamlessly skips detected segments without interruption
 - **🎨 Visual Timeline Markers**: Color-coded segments on YouTube's progress bar
 - **⚙️ Customizable Categories**: Choose what to skip (sponsors, intros, outros, donations, self-promo)
@@ -46,15 +47,26 @@
    - Follow the installation prompts
 
 2. **Get Your API Key**
+
+   Choose your preferred AI provider:
+
+   **Option A: Anthropic Claude** (Recommended)
    - Visit [Anthropic Console](https://console.anthropic.com/settings/keys)
    - Create a free account if you don't have one
-   - Generate a new API key
+   - Generate a new API key (starts with `sk-ant-`)
+
+   **Option B: OpenAI GPT**
+   - Visit [OpenAI Platform](https://platform.openai.com/api-keys)
+   - Create an account if you don't have one
+   - Generate a new API key (starts with `sk-`)
 
 3. **Configure the Extension**
    - Click the SkipTube AI icon in your Chrome toolbar
-   - Paste your API key in the "API Configuration" section
+   - Select your AI Provider (Claude or OpenAI)
+   - Paste your API key in the corresponding section
    - Click "Save"
-   - Choose which categories to skip
+   - Choose your preferred AI model
+   - Select which categories to skip
    - Done! Start watching YouTube videos
 
 ### For Developers
@@ -140,7 +152,9 @@ Yes! You can individually enable/disable each category and adjust the AI confide
 - Node.js (v16 or higher)
 - npm or yarn
 - Chrome browser
-- Claude API key (from [Anthropic Console](https://console.anthropic.com))
+- API key from either:
+  - [Anthropic Console](https://console.anthropic.com) (Claude)
+  - [OpenAI Platform](https://platform.openai.com/api-keys) (GPT)
 
 ### 1. Clone and Install
 
@@ -168,7 +182,7 @@ NODE_ENV=production npm run build
 1. Open Chrome and navigate to `chrome://extensions/`
 2. Enable **"Developer mode"** (toggle in top-right)
 3. Click **"Load unpacked"**
-4. Select the `SkipTubeAI` directory
+4. Select the **`dist`** directory (not the root directory!)
 5. The extension is now loaded!
 
 ### 4. Configure API Key
@@ -185,75 +199,98 @@ NODE_ENV=production npm run build
 
 ```
 SkipTubeAI/
-├── src/
-│   ├── background/                    # Background service worker
-│   │   └── background-main.js         # Main background orchestrator
+├── src/                                # 📂 SOURCE CODE (edit here)
+│   ├── background/                     # Background service worker
+│   │   └── background-main.js          # Main background orchestrator
 │   │
-│   ├── content/                       # Content script (YouTube page)
-│   │   └── content-main.js            # Main content orchestrator
+│   ├── content/                        # Content script (YouTube page)
+│   │   └── content-main.js             # Main content orchestrator
 │   │
-│   ├── popup/                         # Extension popup
-│   │   └── popup-main.js              # Popup logic
+│   ├── popup/                          # Extension popup
+│   │   ├── popup.html                  # Popup UI
+│   │   └── popup-main.js               # Popup logic
 │   │
-│   ├── cache-viewer/                  # Cache viewer page
-│   │   └── cache-viewer-main.js       # Cache viewer logic
+│   ├── cache-viewer/                   # Cache viewer page
+│   │   ├── cache-viewer.html           # Cache viewer UI
+│   │   └── cache-viewer-main.js        # Cache viewer logic
 │   │
-│   └── shared/                        # Shared modules
-│       ├── config.js                  # Configuration constants
-│       ├── constants.js               # Application constants
-│       ├── utils.js                   # Utility functions
-│       │
-│       ├── errors/                    # Error classes
-│       │   ├── base-error.js
-│       │   ├── api-error.js
-│       │   ├── storage-error.js
-│       │   ├── validation-error.js
-│       │   ├── transcript-error.js
-│       │   └── error-handler.js
-│       │
-│       ├── logger/                    # Logging system
-│       │   ├── log-levels.js
-│       │   └── logger.js
-│       │
-│       ├── models/                    # Data models
-│       │   ├── segment.js
-│       │   ├── transcript.js
-│       │   ├── settings.js
-│       │   └── analysis-result.js
-│       │
-│       ├── validators/                # Validation logic
-│       │   ├── segment-validator.js
-│       │   ├── settings-validator.js
-│       │   ├── api-validator.js
-│       │   └── transcript-validator.js
-│       │
-│       ├── repositories/              # Data access layer
-│       │   ├── cache-repository.js
-│       │   ├── settings-repository.js
-│       │   └── stats-repository.js
-│       │
-│       └── services/                  # Business logic
-│           ├── ai-service.js          # AI analysis
-│           ├── storage-service.js     # Chrome storage wrapper
-│           ├── analytics-service.js   # Statistics tracking
-│           └── transcript-service.js  # Transcript extraction
+│   ├── shared/                         # Shared modules
+│   │   ├── config.js                   # Configuration constants
+│   │   ├── constants.js                # Application constants
+│   │   ├── utils.js                    # Utility functions
+│   │   │
+│   │   ├── errors/                     # Error classes
+│   │   │   ├── base-error.js
+│   │   │   ├── api-error.js
+│   │   │   ├── storage-error.js
+│   │   │   ├── validation-error.js
+│   │   │   ├── transcript-error.js
+│   │   │   └── error-handler.js
+│   │   │
+│   │   ├── logger/                     # Logging system
+│   │   │   ├── log-levels.js
+│   │   │   └── logger.js
+│   │   │
+│   │   ├── models/                     # Data models
+│   │   │   ├── segment.js
+│   │   │   ├── transcript.js
+│   │   │   ├── settings.js
+│   │   │   └── analysis-result.js
+│   │   │
+│   │   ├── validators/                 # Validation logic
+│   │   │   ├── segment-validator.js
+│   │   │   ├── settings-validator.js
+│   │   │   ├── api-validator.js
+│   │   │   └── transcript-validator.js
+│   │   │
+│   │   ├── repositories/               # Data access layer
+│   │   │   ├── cache-repository.js
+│   │   │   ├── settings-repository.js
+│   │   │   └── stats-repository.js
+│   │   │
+│   │   └── services/                   # Business logic
+│   │       ├── ai-service.js           # AI analysis
+│   │       ├── storage-service.js      # Chrome storage wrapper
+│   │       ├── analytics-service.js    # Statistics tracking
+│   │       ├── transcript-service.js   # Transcript extraction
+│   │       └── providers/              # AI provider implementations
+│   │           ├── base-provider.js    # Abstract provider class
+│   │           ├── claude-provider.js  # Anthropic Claude
+│   │           └── openai-provider.js  # OpenAI GPT
+│   │
+│   ├── manifest.json                   # Chrome extension manifest
+│   ├── help.html                       # Help page
+│   ├── help.js                         # Help page script
+│   ├── icons/                          # Extension icons
+│   └── logo.png                        # Extension logo
 │
-├── dist/                              # Built bundles
-│   ├── background-bundle.js
-│   ├── content-bundle.js
-│   ├── popup-bundle.js
-│   └── cache-viewer-bundle.js
+├── dist/                               # 📦 BUILD OUTPUT (load this in Chrome!)
+│   ├── manifest.json                   # Copied from src/
+│   ├── popup.html                      # Copied from src/popup/
+│   ├── cache-viewer.html               # Copied from src/cache-viewer/
+│   ├── help.html                       # Copied from src/
+│   ├── help.js                         # Copied from src/
+│   ├── icons/                          # Copied from src/
+│   ├── logo.png                        # Copied from src/
+│   ├── background-bundle.js            # Compiled from src/background/
+│   ├── content-bundle.js               # Compiled from src/content/
+│   ├── popup-bundle.js                 # Compiled from src/popup/
+│   └── cache-viewer-bundle.js          # Compiled from src/cache-viewer/
 │
-├── icons/                             # Extension icons
-├── Screenshots/                       # Screenshots for Web Store
-├── popup.html                         # Popup UI
-├── cache-viewer.html                  # Cache viewer UI
-├── help.html                          # Help page
-├── manifest.json                      # Chrome extension manifest
-├── PRIVACY.md                         # Privacy policy
-├── CLAUDE.md                          # Claude Code instructions
-└── README.md                          # This file
+├── rollup.config.*.js                  # Build configurations
+├── package.json                        # Dependencies and scripts
+├── Screenshots/                        # Screenshots for Web Store
+├── PRIVACY.md                          # Privacy policy
+├── CLAUDE.md                           # Claude Code instructions
+└── README.md                           # This file
 ```
+
+### 💡 Development Workflow
+
+- **Edit files in `src/`** - This is your source code
+- **Run `npm run build`** - Compiles everything to `dist/`
+- **Load `dist/` in Chrome** - Load the dist folder as unpacked extension
+- **Changes not showing?** - Rebuild and reload the extension
 
 ---
 

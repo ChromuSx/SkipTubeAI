@@ -102,9 +102,14 @@ export class SettingsValidator {
       this.validateConfidenceThreshold(advancedSettings.confidenceThreshold);
     }
 
+    // Validate AI provider
+    if (advancedSettings.aiProvider !== undefined) {
+      this.validateAIProvider(advancedSettings.aiProvider);
+    }
+
     // Validate AI model
     if (advancedSettings.aiModel !== undefined) {
-      this.validateAIModel(advancedSettings.aiModel);
+      this.validateAIModel(advancedSettings.aiModel, advancedSettings.aiProvider);
     }
 
     // Validate channel whitelist
@@ -139,11 +144,36 @@ export class SettingsValidator {
   }
 
   /**
-   * Validate AI model selection
-   * @param {string} value - AI model
+   * Validate AI provider
+   * @param {string} value - AI provider
    * @throws {SettingsValidationError}
    */
-  static validateAIModel(value) {
+  static validateAIProvider(value) {
+    if (typeof value !== 'string') {
+      throw new SettingsValidationError(
+        'Must be a string',
+        'aiProvider',
+        value
+      );
+    }
+
+    const validProviders = ['claude', 'openai'];
+    if (!validProviders.includes(value)) {
+      throw new SettingsValidationError(
+        `Must be one of: ${validProviders.join(', ')}`,
+        'aiProvider',
+        value
+      );
+    }
+  }
+
+  /**
+   * Validate AI model selection
+   * @param {string} value - AI model
+   * @param {string} provider - AI provider (optional)
+   * @throws {SettingsValidationError}
+   */
+  static validateAIModel(value, provider = 'claude') {
     if (typeof value !== 'string') {
       throw new SettingsValidationError(
         'Must be a string',
@@ -152,7 +182,10 @@ export class SettingsValidator {
       );
     }
 
-    const validModels = ['haiku', 'sonnet'];
+    const validModels = provider === 'openai'
+      ? ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo']
+      : ['haiku', 'sonnet'];
+
     if (!validModels.includes(value)) {
       throw new SettingsValidationError(
         `Must be one of: ${validModels.join(', ')}`,
@@ -246,14 +279,26 @@ export class SettingsValidator {
   static sanitizeAdvanced(advancedSettings) {
     const defaults = CONFIG.DEFAULTS.ADVANCED_SETTINGS;
 
+    // Determine provider
+    const aiProvider = ['claude', 'openai'].includes(advancedSettings.aiProvider)
+      ? advancedSettings.aiProvider
+      : defaults.aiProvider;
+
+    // Determine valid models based on provider
+    const validModels = aiProvider === 'openai'
+      ? ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo']
+      : ['haiku', 'sonnet'];
+
     return {
       confidenceThreshold: typeof advancedSettings.confidenceThreshold === 'number'
         ? Math.max(0, Math.min(1, advancedSettings.confidenceThreshold))
         : defaults.confidenceThreshold,
 
-      aiModel: ['haiku', 'sonnet'].includes(advancedSettings.aiModel)
+      aiProvider: aiProvider,
+
+      aiModel: validModels.includes(advancedSettings.aiModel)
         ? advancedSettings.aiModel
-        : defaults.aiModel,
+        : (aiProvider === 'openai' ? 'gpt-4o-mini' : 'haiku'),
 
       skipBuffer: typeof advancedSettings.skipBuffer === 'number'
         ? Math.max(0, Math.min(10, advancedSettings.skipBuffer))

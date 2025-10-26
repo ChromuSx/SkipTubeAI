@@ -1,24 +1,23 @@
 // ai-service.js - AI analysis service
 
-import { APIError, APIKeyError, APITimeoutError } from '../errors/index.js';
+import { APIError, APIKeyError } from '../errors/index.js';
 import { logger } from '../logger/index.js';
 import { APIValidator } from '../validators/index.js';
 import { AnalysisResult, Segment } from '../models/index.js';
 import { CONFIG } from '../config.js';
+import { AIProvider } from './providers/index.js';
 
 /**
- * AIService - Handles AI analysis operations
+ * AIService - Handles AI analysis operations using pluggable providers
  */
 export class AIService {
-  constructor(apiKey, baseUrl = 'https://api.anthropic.com/v1/messages') {
-    if (!apiKey || apiKey.length < 20) {
-      throw new APIKeyError('Valid API key required');
+  constructor(provider) {
+    if (!provider || !(provider instanceof AIProvider)) {
+      throw new Error('Valid AIProvider instance required');
     }
 
-    this.apiKey = apiKey;
-    this.baseUrl = baseUrl;
+    this.provider = provider;
     this.logger = logger.child('AIService');
-    this.timeout = 60000; // 60 seconds
   }
 
   /**
@@ -47,20 +46,21 @@ export class AIService {
       // Format transcript for AI
       const formattedText = transcript.formatForAI();
 
+      // Create prompts
+      const systemPrompt = this.getSystemPrompt(enabledCategories);
+      const userMessage = this.getUserMessage(formattedText);
+
       // Create request payload with enabled categories
-      const payload = this.createPayload(formattedText, advancedSettings.aiModel, enabledCategories);
+      const payload = this.provider.createPayload(systemPrompt, userMessage, advancedSettings.aiModel);
 
       // Validate payload
       APIValidator.validateRequestPayload(payload);
 
       // Send request
-      const response = await this.sendRequest(payload);
+      const response = await this.provider.sendRequest(payload);
 
-      // Validate response
-      APIValidator.validateAIResponse(response);
-
-      // Parse response
-      const parsed = this.parseResponse(response);
+      // Parse response (each provider handles its own response structure)
+      const parsed = this.provider.parseResponse(response);
 
       // Validate parsed response
       APIValidator.validateParsedResponse(parsed);
@@ -142,36 +142,6 @@ export class AIService {
     }
 
     return categories;
-  }
-
-  /**
-   * Create request payload
-   * @param {string} text - Formatted transcript text
-   * @param {string} model - AI model
-   * @param {Array<Object>} enabledCategories - Enabled categories (null = all)
-   * @returns {Object}
-   */
-  createPayload(text, model, enabledCategories = null) {
-    const modelMap = {
-      'haiku': 'claude-3-5-haiku-20241022',
-      'sonnet': 'claude-sonnet-4-5-20250929'
-    };
-
-    const systemPrompt = this.getSystemPrompt(enabledCategories);
-    const userMessage = this.getUserMessage(text);
-
-    return {
-      model: modelMap[model] || modelMap['haiku'],
-      max_tokens: 4096,
-      temperature: 0.3,
-      system: systemPrompt,
-      messages: [
-        {
-          role: 'user',
-          content: userMessage
-        }
-      ]
-    };
   }
 
   /**
@@ -286,85 +256,6 @@ Analyze the transcript above and return your analysis as a JSON object containin
   }
 
   /**
-   * Send request to AI API
-   * @param {Object} payload - Request payload
-   * @returns {Promise<Object>}
-   */
-  async sendRequest(payload) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
-
-    try {
-      this.logger.debug(`Sending AI request`, { model: payload.model });
-
-      const response = await fetch(this.baseUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': this.apiKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true'
-        },
-        body: JSON.stringify(payload),
-        signal: controller.signal
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new APIError(
-          errorData.error?.message || `API request failed: ${response.status}`,
-          response.status,
-          errorData
-        );
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      clearTimeout(timeoutId);
-
-      if (error.name === 'AbortError') {
-        throw new APITimeoutError(this.timeout);
-      }
-
-      throw error;
-    }
-  }
-
-  /**
-   * Parse AI response
-   * @param {Object} response - AI response
-   * @returns {Object}
-   */
-  parseResponse(response) {
-    try {
-      const textContent = response.content.find(c => c.type === 'text');
-      if (!textContent) {
-        throw new Error('No text content in response');
-      }
-
-      // Extract JSON from response
-      let jsonText = textContent.text.trim();
-
-      // Remove markdown code blocks if present
-      jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
-
-      // Parse JSON
-      const parsed = JSON.parse(jsonText);
-
-      return parsed;
-    } catch (error) {
-      this.logger.error(`Failed to parse response`, {
-        error: error.message,
-        response: JSON.stringify(response).substring(0, 200)
-      });
-      throw new APIError('Failed to parse AI response', 0, { originalError: error.message });
-    }
-  }
-
-  /**
    * Filter segments by confidence threshold
    * @param {Array} segments - Segments from AI
    * @param {number} threshold - Minimum confidence
@@ -403,27 +294,10 @@ Analyze the transcript above and return your analysis as a JSON object containin
   }
 
   /**
-   * Test API connection
+   * Test API connection via provider
    * @returns {Promise<boolean>}
    */
   async testConnection() {
-    try {
-      const payload = {
-        model: 'claude-3-5-haiku-20241022',
-        max_tokens: 10,
-        messages: [
-          {
-            role: 'user',
-            content: 'Hello'
-          }
-        ]
-      };
-
-      await this.sendRequest(payload);
-      return true;
-    } catch (error) {
-      this.logger.error(`Connection test failed`, { error: error.message });
-      return false;
-    }
+    return await this.provider.testConnection();
   }
 }

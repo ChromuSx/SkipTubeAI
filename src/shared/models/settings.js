@@ -211,6 +211,7 @@ export class AdvancedSettings {
     const sanitized = SettingsValidator.sanitizeAdvanced(settings);
 
     this.confidenceThreshold = sanitized.confidenceThreshold;
+    this.aiProvider = sanitized.aiProvider || 'claude'; // 'claude' or 'openai'
     this.aiModel = sanitized.aiModel;
     this.skipBuffer = sanitized.skipBuffer;
     this.channelWhitelist = sanitized.channelWhitelist;
@@ -266,7 +267,17 @@ export class AdvancedSettings {
    * @returns {string}
    */
   getModelDisplayName() {
-    return this.aiModel === 'haiku' ? 'Claude Haiku (Fast)' : 'Claude Sonnet (Accurate)';
+    if (this.aiProvider === 'claude') {
+      return this.aiModel === 'haiku' ? 'Claude Haiku (Fast)' : 'Claude Sonnet (Accurate)';
+    } else if (this.aiProvider === 'openai') {
+      const modelNames = {
+        'gpt-4o': 'GPT-4o (Best)',
+        'gpt-4o-mini': 'GPT-4o Mini (Fast)',
+        'gpt-4-turbo': 'GPT-4 Turbo (Balanced)'
+      };
+      return modelNames[this.aiModel] || this.aiModel;
+    }
+    return this.aiModel;
   }
 
   /**
@@ -284,6 +295,7 @@ export class AdvancedSettings {
   toJSON() {
     return {
       confidenceThreshold: this.confidenceThreshold,
+      aiProvider: this.aiProvider,
       aiModel: this.aiModel,
       skipBuffer: this.skipBuffer,
       channelWhitelist: [...this.channelWhitelist]

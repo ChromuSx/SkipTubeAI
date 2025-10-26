@@ -4,6 +4,7 @@ import { logger } from '../shared/logger/index.js';
 import { StorageService } from '../shared/services/storage-service.js';
 import { AnalyticsService } from '../shared/services/analytics-service.js';
 import { AdvancedSettings } from '../shared/models/index.js';
+import { validateProviderAPIKey } from '../shared/services/providers/index.js';
 
 /**
  * PopupManager - Manages popup UI and interactions
@@ -12,6 +13,7 @@ class PopupManager {
   constructor() {
     this.currentVideoId = null;
     this.isLoadingSettings = true;
+    this.selectedProvider = 'claude'; // Track selected provider
 
     // Services
     this.logger = logger.child('PopupManager');
@@ -211,57 +213,82 @@ class PopupManager {
   }
 
   /**
-   * Load API key from storage
+   * Load API keys and provider selection from storage
    */
   async loadAPIKey() {
     try {
-      const data = await chrome.storage.local.get(['apiKey']);
+      // Load provider from advanced settings
+      const advancedSettings = await this.storageService.getAdvancedSettings();
+      this.selectedProvider = advancedSettings.aiProvider || 'claude';
 
-      if (data.apiKey && data.apiKey.length >= 20) {
-        // Mask the API key for display (show first 8 and last 4 chars)
-        const maskedKey = data.apiKey.substring(0, 12) + '...' + data.apiKey.substring(data.apiKey.length - 4);
-        document.getElementById('api-key-input').value = data.apiKey;
-        this.updateAPIKeyStatus(true);
+      // Update provider selector
+      document.getElementById('ai-provider-select').value = this.selectedProvider;
 
-        this.logger.info('API key loaded');
-      } else {
-        this.updateAPIKeyStatus(false);
-        this.logger.warn('No API key configured');
+      // Load both API keys
+      const data = await chrome.storage.local.get(['claudeApiKey', 'openaiApiKey', 'apiKey']);
+
+      // Handle legacy single API key (migrate to Claude)
+      if (data.apiKey && !data.claudeApiKey) {
+        await chrome.storage.local.set({ claudeApiKey: data.apiKey });
+        data.claudeApiKey = data.apiKey;
+        this.logger.info('Migrated legacy API key');
       }
+
+      // Load Claude API key
+      if (data.claudeApiKey && data.claudeApiKey.length >= 20) {
+        document.getElementById('claude-api-key-input').value = data.claudeApiKey;
+        this.updateAPIKeyStatus('claude', true);
+        this.logger.info('Claude API key loaded');
+      } else {
+        this.updateAPIKeyStatus('claude', false);
+      }
+
+      // Load OpenAI API key
+      if (data.openaiApiKey && data.openaiApiKey.length >= 20) {
+        document.getElementById('openai-api-key-input').value = data.openaiApiKey;
+        this.updateAPIKeyStatus('openai', true);
+        this.logger.info('OpenAI API key loaded');
+      } else {
+        this.updateAPIKeyStatus('openai', false);
+      }
+
+      // Update UI for selected provider
+      this.updateProviderUI();
+
     } catch (error) {
-      this.logger.error('Failed to load API key', { error: error.message });
-      this.updateAPIKeyStatus(false);
+      this.logger.error('Failed to load API keys', { error: error.message });
+      this.updateAPIKeyStatus('claude', false);
+      this.updateAPIKeyStatus('openai', false);
     }
   }
 
   /**
-   * Update API key status indicator
+   * Update API key status indicator for a specific provider
+   * @param {string} provider - Provider name ('claude' or 'openai')
    * @param {boolean} isConfigured - Whether API key is configured
    */
-  updateAPIKeyStatus(isConfigured) {
-    const statusEl = document.getElementById('api-key-status');
+  updateAPIKeyStatus(provider, isConfigured) {
+    const statusEl = document.getElementById(`${provider}-api-key-status`);
 
-    if (isConfigured) {
-      statusEl.textContent = 'Configured';
-      statusEl.style.background = '#00aa00';
-    } else {
-      statusEl.textContent = 'Not Configured';
-      statusEl.style.background = '#ff0000';
+    if (statusEl) {
+      if (isConfigured) {
+        statusEl.textContent = 'Configured';
+        statusEl.style.background = '#00aa00';
+      } else {
+        statusEl.textContent = 'Not Configured';
+        statusEl.style.background = '#ff0000';
+      }
     }
   }
 
   /**
-   * Validate API key format
+   * Validate API key format for a specific provider
+   * @param {string} provider - Provider name
    * @param {string} apiKey - API key to validate
    * @returns {boolean}
    */
-  validateAPIKey(apiKey) {
+  validateAPIKey(provider, apiKey) {
     if (!apiKey || typeof apiKey !== 'string') {
-      return false;
-    }
-
-    // Claude API keys start with 'sk-ant-'
-    if (!apiKey.startsWith('sk-ant-')) {
       return false;
     }
 
@@ -270,28 +297,33 @@ class PopupManager {
       return false;
     }
 
-    return true;
+    // Use provider-specific validation
+    return validateProviderAPIKey(provider, apiKey);
   }
 
   /**
-   * Save API key
+   * Save API key for specific provider
+   * @param {string} provider - Provider name
    */
-  async saveAPIKey() {
+  async saveAPIKey(provider) {
     try {
-      const apiKey = document.getElementById('api-key-input').value.trim();
+      const inputId = `${provider}-api-key-input`;
+      const apiKey = document.getElementById(inputId).value.trim();
 
       // Validate format
-      if (!this.validateAPIKey(apiKey)) {
-        this.showToast('Invalid API key format. Must start with "sk-ant-" and be at least 20 characters', 'error', 5000);
+      if (!this.validateAPIKey(provider, apiKey)) {
+        const providerName = provider === 'claude' ? 'Claude (sk-ant-)' : 'OpenAI (sk-)';
+        this.showToast(`Invalid ${providerName} API key format`, 'error', 5000);
         return;
       }
 
       // Save to storage
-      await chrome.storage.local.set({ apiKey });
+      const storageKey = `${provider}ApiKey`;
+      await chrome.storage.local.set({ [storageKey]: apiKey });
 
       // Notify background service
       chrome.runtime.sendMessage(
-        { action: 'updateAPIKey', apiKey },
+        { action: 'updateAPIKey', data: { provider, apiKey } },
         (response) => {
           if (chrome.runtime.lastError) {
             this.logger.error('Failed to notify background', {
@@ -302,9 +334,9 @@ class PopupManager {
           }
 
           if (response && response.success) {
-            this.updateAPIKeyStatus(true);
-            this.showToast('API key saved successfully!', 'success');
-            this.logger.info('API key saved and background updated');
+            this.updateAPIKeyStatus(provider, true);
+            this.showToast(`${provider === 'claude' ? 'Claude' : 'OpenAI'} API key saved!`, 'success');
+            this.logger.info(`${provider} API key saved`);
           } else {
             this.showToast('Failed to update API key', 'error');
           }
@@ -317,11 +349,89 @@ class PopupManager {
   }
 
   /**
-   * Toggle API key visibility
+   * Update provider UI (show/hide sections and models)
    */
-  toggleAPIKeyVisibility() {
-    const input = document.getElementById('api-key-input');
-    const button = document.getElementById('toggle-api-key-visibility');
+  updateProviderUI() {
+    // Show/hide API key sections
+    const claudeSection = document.getElementById('claude-api-key-section');
+    const openaiSection = document.getElementById('openai-api-key-section');
+
+    if (this.selectedProvider === 'claude') {
+      claudeSection.style.display = 'flex';
+      openaiSection.style.display = 'none';
+    } else {
+      claudeSection.style.display = 'none';
+      openaiSection.style.display = 'flex';
+    }
+
+    // Update AI model options
+    const modelSelect = document.getElementById('ai-model');
+    const options = modelSelect.querySelectorAll('option');
+
+    options.forEach(option => {
+      const optionProvider = option.getAttribute('data-provider');
+      if (optionProvider === this.selectedProvider) {
+        option.style.display = '';
+        option.disabled = false;
+      } else {
+        option.style.display = 'none';
+        option.disabled = true;
+      }
+    });
+
+    // Set default model for provider if current is invalid
+    const currentModel = modelSelect.value;
+    const currentModelOption = modelSelect.querySelector(`option[value="${currentModel}"]`);
+
+    if (!currentModelOption || currentModelOption.getAttribute('data-provider') !== this.selectedProvider) {
+      // Select first available model for provider
+      const firstAvailable = modelSelect.querySelector(`option[data-provider="${this.selectedProvider}"]`);
+      if (firstAvailable) {
+        modelSelect.value = firstAvailable.value;
+      }
+    }
+  }
+
+  /**
+   * Handle provider change
+   * @param {string} newProvider - New provider
+   */
+  async handleProviderChange(newProvider) {
+    try {
+      this.selectedProvider = newProvider;
+
+      // Update UI
+      this.updateProviderUI();
+
+      // Save to advanced settings
+      const current = await this.storageService.getAdvancedSettings();
+      const updated = current.merge({ aiProvider: newProvider });
+      await this.storageService.saveAdvancedSettings(updated);
+
+      // Notify background service
+      chrome.runtime.sendMessage(
+        { action: 'updateProvider', provider: newProvider },
+        (response) => {
+          if (!chrome.runtime.lastError && response?.success) {
+            this.logger.info(`Provider changed to ${newProvider}`);
+          }
+        }
+      );
+
+      this.showToast(`Switched to ${newProvider === 'claude' ? 'Claude' : 'OpenAI'}`, 'success');
+    } catch (error) {
+      this.logger.error('Failed to change provider', { error: error.message });
+      this.showToast('Failed to change provider', 'error');
+    }
+  }
+
+  /**
+   * Toggle API key visibility for specific provider
+   * @param {string} provider - Provider name
+   */
+  toggleAPIKeyVisibility(provider) {
+    const input = document.getElementById(`${provider}-api-key-input`);
+    const button = document.getElementById(`toggle-${provider}-api-key-visibility`);
     const icon = button.querySelector('.material-icons');
 
     if (input.type === 'password') {
@@ -337,18 +447,38 @@ class PopupManager {
    * Setup event listeners
    */
   setupEventListeners() {
-    // API Key management
-    document.getElementById('save-api-key-btn').addEventListener('click', () => {
-      this.saveAPIKey();
+    // AI Provider selection
+    document.getElementById('ai-provider-select').addEventListener('change', (e) => {
+      this.handleProviderChange(e.target.value);
     });
 
-    document.getElementById('toggle-api-key-visibility').addEventListener('click', () => {
-      this.toggleAPIKeyVisibility();
+    // Claude API Key management
+    document.getElementById('save-claude-api-key-btn').addEventListener('click', () => {
+      this.saveAPIKey('claude');
     });
 
-    document.getElementById('api-key-input').addEventListener('keypress', (e) => {
+    document.getElementById('toggle-claude-api-key-visibility').addEventListener('click', () => {
+      this.toggleAPIKeyVisibility('claude');
+    });
+
+    document.getElementById('claude-api-key-input').addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
-        this.saveAPIKey();
+        this.saveAPIKey('claude');
+      }
+    });
+
+    // OpenAI API Key management
+    document.getElementById('save-openai-api-key-btn').addEventListener('click', () => {
+      this.saveAPIKey('openai');
+    });
+
+    document.getElementById('toggle-openai-api-key-visibility').addEventListener('click', () => {
+      this.toggleAPIKeyVisibility('openai');
+    });
+
+    document.getElementById('openai-api-key-input').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        this.saveAPIKey('openai');
       }
     });
 
