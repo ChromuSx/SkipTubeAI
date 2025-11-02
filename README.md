@@ -2,7 +2,7 @@
 
 <div align="center">
 
-<img src="icons/icon128.png" alt="SkipTube AI Logo" width="128">
+<img src="src/icons/icon128.png" alt="SkipTube AI Logo" width="128">
 
 **AI-powered Chrome extension that automatically detects and skips sponsorships, intros, outros, and promotional content in YouTube videos using Claude AI or OpenAI.**
 
