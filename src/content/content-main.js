@@ -450,8 +450,8 @@ class YouTubeSkipManager {
       // Get video title
       const videoTitle = document.querySelector('h1.ytd-watch-metadata yt-formatted-string')?.textContent || 'YouTube Video';
 
-      // Send to background for AI analysis
-      const result = await chrome.runtime.sendMessage({
+      // Send to background for AI analysis (with retry logic)
+      const result = await this.sendMessageWithRetry({
         action: 'analyzeTranscript',
         data: {
           videoId: videoId,
@@ -833,6 +833,53 @@ class YouTubeSkipManager {
    */
   delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Send message to background with retry logic
+   * Handles cases where service worker is restarting
+   * @param {Object} message - Message to send
+   * @param {number} maxRetries - Maximum retry attempts
+   * @returns {Promise<any>}
+   */
+  async sendMessageWithRetry(message, maxRetries = 3) {
+    let lastError = null;
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        this.logger.debug('Sending message', {
+          action: message.action,
+          attempt: attempt + 1
+        });
+
+        const result = await chrome.runtime.sendMessage(message);
+        return result;
+
+      } catch (error) {
+        lastError = error;
+
+        // Check if this is the "receiving end does not exist" error
+        if (error.message?.includes('receiving end does not exist')) {
+          this.logger.warn('Service worker not ready, retrying', {
+            attempt: attempt + 1,
+            maxRetries
+          });
+
+          // Wait before retrying (exponential backoff)
+          await this.delay(Math.pow(2, attempt) * 500);
+          continue;
+        }
+
+        // For other errors, throw immediately
+        throw error;
+      }
+    }
+
+    // If all retries failed, throw the last error
+    this.logger.error('All message retry attempts failed', {
+      error: lastError.message
+    });
+    throw lastError;
   }
 }
 

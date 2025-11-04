@@ -33,8 +33,16 @@ class BackgroundService {
     // AI service will be initialized after loading API keys
     this.aiService = null;
 
-    // Initialize async
-    this.initialize();
+    // Track initialization state
+    this.isInitialized = false;
+    this.initializationPromise = null;
+
+    // Setup message listener FIRST (synchronously) to avoid race conditions
+    // This ensures the listener is ready even if initialization is still in progress
+    this.setupMessageListener();
+
+    // Initialize async (API keys, AI service, maintenance)
+    this.initializationPromise = this.initialize();
   }
 
   /**
@@ -45,8 +53,9 @@ class BackgroundService {
       // Load API key from storage
       await this.loadAPIKey();
 
-      this.setupMessageListener();
       this.schedulePeriodicMaintenance();
+
+      this.isInitialized = true;
 
       this.logger.info('Background service initialized', {
         selectedProvider: this.selectedProvider,
@@ -59,6 +68,19 @@ class BackgroundService {
         error: error.message
       });
     }
+  }
+
+  /**
+   * Ensure initialization is complete
+   * @returns {Promise<void>}
+   */
+  async ensureInitialized() {
+    if (this.isInitialized) {
+      return;
+    }
+
+    this.logger.debug('Waiting for initialization to complete');
+    await this.initializationPromise;
   }
 
   /**
@@ -175,7 +197,9 @@ class BackgroundService {
       });
 
       if (request.action === 'analyzeTranscript') {
-        this.handleTranscriptAnalysis(request.data)
+        // Wait for initialization to complete before processing
+        this.ensureInitialized()
+          .then(() => this.handleTranscriptAnalysis(request.data))
           .then(result => sendResponse(result))
           .catch(error => {
             this.logger.error('Analysis failed', {
