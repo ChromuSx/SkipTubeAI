@@ -35,6 +35,8 @@ export default {
         { src: 'src/cache-viewer/cache-viewer.html', dest: 'dist' },
         { src: 'src/help/help.html', dest: 'dist' },
         { src: 'src/help/help.js', dest: 'dist' },
+        { src: 'src/welcome.html', dest: 'dist' },
+        { src: 'src/welcome.js', dest: 'dist' },
         // Manifest and assets
         { src: 'src/manifest.json', dest: 'dist' },
         { src: 'src/icons', dest: 'dist' },
