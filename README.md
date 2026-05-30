@@ -6,7 +6,7 @@
 
 **AI-powered Chrome extension that automatically detects and skips sponsorships, intros, outros, and promotional content in YouTube videos using Claude AI or OpenAI.**
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/ChromuSx/SkipTubeAI/releases)
+[![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](https://github.com/ChromuSx/SkipTubeAI/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Chrome Web Store](https://img.shields.io/badge/Chrome-Web%20Store-orange.svg)](https://chrome.google.com/webstore)
 [![GitHub Stars](https://img.shields.io/github/stars/ChromuSx/SkipTubeAI?style=social)](https://github.com/ChromuSx/SkipTubeAI)
