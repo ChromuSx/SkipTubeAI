@@ -25,6 +25,175 @@ export class TranscriptService {
     // Latest transcript captured by the MAIN-world interceptor, keyed by videoId.
     this._intercepted = null;
     this._bridgeSetup = false;
+
+    // Active selectors. Healed selectors (from AI self-heal) are merged on top of
+    // these defaults as additional, comma-combined fallbacks - never replacing them,
+    // so a stale healed selector can never be worse than the built-in default.
+    this._defaultSelectors = {
+      DESCRIPTION_EXPANDER: SELECTORS.DESCRIPTION_EXPANDER,
+      TRANSCRIPT_BUTTON_SECTION: SELECTORS.TRANSCRIPT_BUTTON_SECTION,
+      TRANSCRIPT_PANEL: SELECTORS.TRANSCRIPT_PANEL,
+      TRANSCRIPT_SEGMENTS: SELECTORS.TRANSCRIPT_SEGMENTS,
+      SEGMENT_TIMESTAMP: SELECTORS.SEGMENT_TIMESTAMP,
+      SEGMENT_TEXT: SELECTORS.SEGMENT_TEXT
+    };
+    this.selectors = { ...this._defaultSelectors };
+    this.healedSelectors = null;
+    this._healedLoaded = false;
+  }
+
+  /** Map from AI heal-result keys to internal selector keys. */
+  static get HEAL_KEY_MAP() {
+    return {
+      descriptionExpanderSelector: 'DESCRIPTION_EXPANDER',
+      transcriptButtonSelector: 'TRANSCRIPT_BUTTON_SECTION',
+      panelSelector: 'TRANSCRIPT_PANEL',
+      segmentSelector: 'TRANSCRIPT_SEGMENTS',
+      timestampSelector: 'SEGMENT_TIMESTAMP',
+      textSelector: 'SEGMENT_TEXT'
+    };
+  }
+
+  /**
+   * Test whether a string is a syntactically valid CSS selector.
+   * @param {string} selector
+   * @returns {boolean}
+   */
+  isValidSelector(selector) {
+    if (typeof selector !== 'string' || !selector.trim()) return false;
+    try {
+      document.querySelector(selector);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Merge AI-provided selectors on top of the defaults (as comma-combined
+   * fallbacks). Only syntactically valid selectors are accepted.
+   * @param {Object} healed - Heal-result map
+   * @returns {Object} - Accepted heal entries (subset of `healed`)
+   */
+  applyHealedSelectors(healed) {
+    const accepted = {};
+    if (!healed || typeof healed !== 'object') return accepted;
+
+    for (const [healKey, selKey] of Object.entries(TranscriptService.HEAL_KEY_MAP)) {
+      const value = healed[healKey];
+      if (!this.isValidSelector(value)) continue;
+
+      const base = this._defaultSelectors[selKey];
+      // Combine so both healed and default are tried; avoid duplicate.
+      this.selectors[selKey] = base && base !== value ? `${value}, ${base}` : value;
+      accepted[healKey] = value;
+    }
+
+    if (Object.keys(accepted).length > 0) {
+      this.healedSelectors = { ...(this.healedSelectors || {}), ...accepted };
+    }
+    return accepted;
+  }
+
+  /**
+   * Load cached healed selectors from storage once per session.
+   * @returns {Promise<void>}
+   */
+  async loadHealedSelectors() {
+    if (this._healedLoaded) return;
+    this._healedLoaded = true;
+    try {
+      const { healedSelectors } = await chrome.storage.local.get('healedSelectors');
+      if (healedSelectors) {
+        const accepted = this.applyHealedSelectors(healedSelectors);
+        if (Object.keys(accepted).length > 0) {
+          this.logger.info('Loaded cached healed selectors', { keys: Object.keys(accepted) });
+        }
+      }
+    } catch (error) {
+      this.logger.debug('No cached healed selectors', { error: error.message });
+    }
+  }
+
+  /**
+   * Persist the current healed selectors to storage.
+   * @returns {Promise<void>}
+   */
+  async persistHealedSelectors() {
+    try {
+      if (this.healedSelectors) {
+        await chrome.storage.local.set({ healedSelectors: this.healedSelectors });
+      }
+    } catch (error) {
+      this.logger.warn('Failed to persist healed selectors', { error: error.message });
+    }
+  }
+
+  /**
+   * Build a pruned HTML snapshot of the regions relevant to transcript extraction
+   * (description/metadata + engagement panels). Inline styles, scripts, SVGs and
+   * comments are stripped and the result is size-capped to keep the AI call cheap.
+   * @returns {string|null}
+   */
+  buildDomSnapshot() {
+    const regions = [];
+    const meta = document.querySelector('ytd-watch-metadata') || document.querySelector('#below');
+    if (meta) regions.push(meta);
+    document.querySelectorAll('ytd-engagement-panel-section-list-renderer').forEach((p) => regions.push(p));
+
+    if (regions.length === 0) return null;
+
+    let html = regions.map((r) => r.outerHTML).join('\n');
+    html = html
+      .replace(/<svg[\s\S]*?<\/svg>/gi, '')
+      .replace(/<script[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[\s\S]*?<\/style>/gi, '')
+      .replace(/<!--[\s\S]*?-->/g, '')
+      .replace(/\sstyle="[^"]*"/gi, '')
+      .replace(/\sdata-[a-z-]+="[^"]*"/gi, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    return html.slice(0, 12000);
+  }
+
+  /**
+   * Last-resort recovery: snapshot the page, ask the AI (via background) for
+   * working selectors, validate and merge them, and persist on success.
+   * @returns {Promise<boolean>} - true if new selectors were applied
+   */
+  async selfHeal() {
+    try {
+      const snapshot = this.buildDomSnapshot();
+      if (!snapshot) {
+        this.logger.warn('Self-heal skipped: no DOM snapshot available');
+        return false;
+      }
+
+      const response = await chrome.runtime.sendMessage({
+        action: 'healSelectors',
+        data: { snapshot, url: location.href }
+      });
+
+      if (!response || !response.success || !response.selectors) {
+        this.logger.warn('Self-heal returned no selectors', { error: response && response.error });
+        return false;
+      }
+
+      const accepted = this.applyHealedSelectors(response.selectors);
+      const keys = Object.keys(accepted);
+      if (keys.length === 0) {
+        this.logger.warn('Self-heal selectors were invalid or unusable');
+        return false;
+      }
+
+      await this.persistHealedSelectors();
+      this.logger.info('Self-heal applied new selectors', { keys });
+      return true;
+    } catch (error) {
+      this.logger.error('Self-heal failed', { error: error.message });
+      return false;
+    }
   }
 
   /**
@@ -78,18 +247,22 @@ export class TranscriptService {
     try {
       this.logger.info(`Extracting transcript`, { videoId });
 
-      // Ensure we are listening for interceptor-captured transcripts.
+      // Ensure we are listening for interceptor-captured transcripts and that any
+      // previously healed selectors are loaded.
       this.setupInterceptorBridge();
+      await this.loadHealedSelectors();
 
-      // Opening the transcript panel makes the page issue its authenticated
-      // get_transcript request, which the MAIN-world interceptor captures.
-      const opened = await this.openTranscriptPanel();
-      if (!opened) {
-        this.logger.warn(`Could not open transcript panel`, { videoId });
+      // Attempt 1: interceptor (primary) + DOM (fallback).
+      let transcriptData = await this.attemptExtraction(videoId);
+
+      // Attempt 2 (last resort): AI self-heal of the selectors, then retry once.
+      if (!transcriptData || transcriptData.length === 0) {
+        this.logger.warn('Extraction failed; attempting AI self-heal', { videoId });
+        const healed = await this.selfHeal();
+        if (healed) {
+          transcriptData = await this.attemptExtraction(videoId);
+        }
       }
-
-      // Wait for transcript: interceptor (primary) then DOM (fallback).
-      const transcriptData = await this.waitForTranscript(videoId);
 
       if (!transcriptData || transcriptData.length === 0) {
         throw new TranscriptNotAvailableError(videoId);
@@ -121,13 +294,27 @@ export class TranscriptService {
   }
 
   /**
+   * Open the transcript panel and wait for transcript data (interceptor or DOM).
+   * Returns null instead of throwing so the caller can decide whether to self-heal.
+   * @param {string} videoId
+   * @returns {Promise<Array|null>}
+   */
+  async attemptExtraction(videoId) {
+    const opened = await this.openTranscriptPanel();
+    if (!opened) {
+      this.logger.warn('Could not open transcript panel', { videoId });
+    }
+    return this.waitForTranscript(videoId);
+  }
+
+  /**
    * Expand the video description ("...more"), which since 2024 hides the
    * "Show transcript" button until expanded.
    * @returns {Promise<void>}
    */
   async expandDescription() {
     try {
-      const expander = document.querySelector(SELECTORS.DESCRIPTION_EXPANDER);
+      const expander = document.querySelector(this.selectors.DESCRIPTION_EXPANDER);
       if (expander && expander.offsetParent !== null) {
         expander.click();
         this.logger.debug('Expanded video description');
@@ -145,7 +332,7 @@ export class TranscriptService {
    */
   findTranscriptButton() {
     // Preferred: the dedicated transcript section button inside the description.
-    const sectionBtn = document.querySelector(SELECTORS.TRANSCRIPT_BUTTON_SECTION);
+    const sectionBtn = document.querySelector(this.selectors.TRANSCRIPT_BUTTON_SECTION);
     if (sectionBtn) return sectionBtn;
 
     // Fallback: any button/aria-label mentioning transcript (EN + IT).
@@ -165,7 +352,7 @@ export class TranscriptService {
   async openTranscriptPanel() {
     try {
       // Already open?
-      const existing = document.querySelector(SELECTORS.TRANSCRIPT_PANEL);
+      const existing = document.querySelector(this.selectors.TRANSCRIPT_PANEL);
       if (existing && existing.offsetParent !== null) {
         this.logger.debug('Transcript panel already open');
         return true;
@@ -225,7 +412,8 @@ export class TranscriptService {
       await this.delay(this.retryDelay);
     }
 
-    throw new TranscriptExtractionError('Transcript not found after retries');
+    this.logger.debug('Transcript not found after retries');
+    return null;
   }
 
   /**
@@ -249,15 +437,15 @@ export class TranscriptService {
    */
   extractTranscriptData() {
     try {
-      const panel = document.querySelector(SELECTORS.TRANSCRIPT_PANEL);
+      const panel = document.querySelector(this.selectors.TRANSCRIPT_PANEL);
       if (!panel) return null;
 
-      const segments = panel.querySelectorAll(SELECTORS.TRANSCRIPT_SEGMENTS);
+      const segments = panel.querySelectorAll(this.selectors.TRANSCRIPT_SEGMENTS);
       if (!segments || segments.length === 0) return null;
 
       const transcriptData = Array.from(segments).map((segment) => {
-        const timeElement = segment.querySelector(SELECTORS.SEGMENT_TIMESTAMP);
-        const textElement = segment.querySelector(SELECTORS.SEGMENT_TEXT);
+        const timeElement = segment.querySelector(this.selectors.SEGMENT_TIMESTAMP);
+        const textElement = segment.querySelector(this.selectors.SEGMENT_TEXT);
         if (!timeElement || !textElement) return null;
 
         const timeSeconds = this.parseTimestamp(timeElement.textContent);

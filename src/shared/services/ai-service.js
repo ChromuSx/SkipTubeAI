@@ -276,6 +276,109 @@ Analyze the transcript above and return your analysis as a JSON object containin
   }
 
   /**
+   * Self-heal: ask the AI to derive working DOM selectors from a page snapshot.
+   * Used only as a last resort when interceptor + DOM extraction both fail
+   * (e.g. YouTube renamed elements). A stronger model is forced for this rare,
+   * high-stakes step regardless of the user's configured analysis model.
+   * @param {string} snapshot - Pruned HTML snapshot of the watch page
+   * @returns {Promise<Object>} - Map of selector keys to CSS selectors (only valid ones)
+   */
+  async healSelectors(snapshot) {
+    const stopTimer = this.logger.time('AI self-heal selectors');
+
+    try {
+      // Force the strongest sensible model for the heal step.
+      const model = this.provider.getName() === 'openai' ? 'gpt-5.5' : 'sonnet';
+
+      const systemPrompt = this.getHealSystemPrompt();
+      const userMessage = `<dom_snapshot>\n${snapshot}\n</dom_snapshot>\n\nReturn ONLY the selectors JSON object.`;
+
+      const payload = this.provider.createPayload(systemPrompt, userMessage, model);
+      APIValidator.validateRequestPayload(payload);
+
+      const response = await this.provider.sendRequest(payload);
+      const parsed = this.provider.parseResponse(response);
+
+      const result = this.normalizeHealResult(parsed);
+
+      this.logger.info('Self-heal selectors produced', {
+        model,
+        keys: Object.keys(result)
+      });
+
+      stopTimer();
+      return result;
+    } catch (error) {
+      stopTimer();
+      this.logger.error('Self-heal selector generation failed', { error: error.message });
+      throw error;
+    }
+  }
+
+  /**
+   * Keep only string selector values from the parsed heal response.
+   * @param {Object} parsed
+   * @returns {Object}
+   */
+  normalizeHealResult(parsed) {
+    const keys = [
+      'descriptionExpanderSelector',
+      'transcriptButtonSelector',
+      'panelSelector',
+      'segmentSelector',
+      'timestampSelector',
+      'textSelector'
+    ];
+    const out = {};
+    for (const key of keys) {
+      const value = parsed && parsed[key];
+      if (typeof value === 'string' && value.trim()) {
+        out[key] = value.trim();
+      }
+    }
+    return out;
+  }
+
+  /**
+   * System prompt for the self-heal selector task.
+   * @returns {string}
+   */
+  getHealSystemPrompt() {
+    return `You are a DOM analysis expert. You are given a pruned HTML snapshot from a YouTube watch page (youtube.com/watch). Inline styles, scripts and SVGs have been stripped, but tag names, id, class, aria-label and target-id attributes are preserved.
+
+<goal>
+A browser extension needs CSS selectors to (1) expand the video description, (2) open the transcript panel, and (3) read transcript segments. YouTube periodically renames elements, breaking hard-coded selectors. Derive working selectors from the snapshot.
+</goal>
+
+<what_to_find>
+- descriptionExpanderSelector: the "...more" / "Show more" button that expands the collapsed description (historically id "expand").
+- transcriptButtonSelector: the "Show transcript" button (often inside ytd-video-description-transcript-section-renderer; has aria-label or text mentioning transcript).
+- panelSelector: the engagement panel container that holds the transcript (an ytd-engagement-panel-section-list-renderer whose target-id contains "transcript", e.g. "PAmodern_transcript_view").
+- segmentSelector: the repeated element representing one transcript line (historically ytd-transcript-segment-renderer).
+- timestampSelector: the element INSIDE a segment holding the timestamp text like "1:23" (historically ".segment-timestamp").
+- textSelector: the element INSIDE a segment holding the caption text (historically ".segment-text").
+</what_to_find>
+
+<rules>
+- Prefer STABLE selectors: tag names, target-id substrings, aria-label, semantic ids over hashed/random class names.
+- timestampSelector and textSelector must be relative to a single segment element (used via segment.querySelector).
+- If an element is not present in the snapshot, set its value to null. Never invent class names you do not see.
+- Return ONLY a valid JSON object, no markdown, no commentary.
+</rules>
+
+<output_format>
+{
+  "descriptionExpanderSelector": "<css or null>",
+  "transcriptButtonSelector": "<css or null>",
+  "panelSelector": "<css or null>",
+  "segmentSelector": "<css or null>",
+  "timestampSelector": "<css or null>",
+  "textSelector": "<css or null>"
+}
+</output_format>`;
+  }
+
+  /**
    * Translate AI category to display name
    * @param {string} category - AI category
    * @returns {string}

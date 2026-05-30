@@ -214,6 +214,17 @@ class BackgroundService {
         return true; // Keep channel open for async response
       }
 
+      if (request.action === 'healSelectors') {
+        this.ensureInitialized()
+          .then(() => this.handleHealSelectors(request.data))
+          .then(result => sendResponse(result))
+          .catch(error => {
+            this.logger.error('Self-heal failed', { error: error.message });
+            sendResponse({ success: false, error: error.message });
+          });
+        return true; // Keep channel open for async response
+      }
+
       if (request.action === 'updateAPIKey') {
         this.handleAPIKeyUpdate(request.data || request.apiKey)
           .then(() => sendResponse({ success: true }))
@@ -446,6 +457,28 @@ class BackgroundService {
         error: this.formatErrorMessage(error)
       };
     }
+  }
+
+  /**
+   * Handle AI self-heal request: derive working DOM selectors from a page snapshot.
+   * @param {Object} data - { snapshot, url }
+   * @returns {Promise<Object>}
+   */
+  async handleHealSelectors(data) {
+    if (!this.aiService) {
+      return { success: false, error: 'AI service not configured' };
+    }
+    if (!data || typeof data.snapshot !== 'string' || data.snapshot.length === 0) {
+      return { success: false, error: 'No DOM snapshot provided' };
+    }
+
+    this.logger.info('Running AI self-heal for selectors', {
+      snapshotLength: data.snapshot.length,
+      url: data.url
+    });
+
+    const selectors = await this.aiService.healSelectors(data.snapshot);
+    return { success: true, selectors };
   }
 
   /**
