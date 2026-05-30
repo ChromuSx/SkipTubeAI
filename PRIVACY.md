@@ -1,5 +1,7 @@
 # Privacy Policy for SkipTube AI
 
+**Last Updated:** May 31, 2026
+
 ## Introduction
 
 SkipTube AI ("the Extension") is a Chrome browser extension that uses artificial intelligence to analyze YouTube video transcripts and automatically skip sponsorships, intros, outros, and other content segments. This Privacy Policy explains how we collect, use, and protect your information.
@@ -36,12 +38,23 @@ Basic statistics tracked locally only:
 - Total time saved
 - This data never leaves your device
 
+### 6. Page Structure Snapshot (Self-Healing Only)
+YouTube periodically changes its page layout, which can break transcript extraction. As a last-resort recovery mechanism, the Extension may send a **snapshot of the YouTube page's HTML structure** to your chosen AI provider so it can re-learn how to locate the transcript. This snapshot:
+- Contains only page structure (element names, ids, CSS classes) — scripts, styles and images are stripped
+- Does **not** contain personal information about you
+- Is sent only when both automatic extraction methods fail, and the resulting selectors are cached locally so it is not repeated
+- Is sent to the same AI provider you already use for transcript analysis
+
 ## How We Use Your Information
 
 ### Video Transcript Analysis
 - Transcripts are sent to your chosen AI provider (Anthropic's Claude AI or OpenAI) for analysis
 - The AI identifies sponsorships, intros, outros, and promotional content
 - Results are cached locally to avoid repeat analysis
+
+### AI-Assisted Layout Adaptation (Self-Healing)
+- If YouTube changes its layout and transcript extraction fails, a snapshot of the page's HTML structure (no personal data) is sent to your chosen AI provider so the Extension can re-learn how to read the transcript
+- This happens rarely and the result is cached locally to avoid repeating it
 
 ### Extension Functionality
 - Settings are used to control skip behavior
@@ -53,13 +66,13 @@ Basic statistics tracked locally only:
 ### AI Providers
 
 #### Anthropic (Claude AI)
-- **What we share:** Video transcripts and your API key
+- **What we share:** Video transcripts, your API key, and (rarely) a snapshot of YouTube's page HTML structure for layout adaptation
 - **Purpose:** AI-powered content analysis
 - **Their privacy policy:** https://www.anthropic.com/legal/privacy
 - **Your control:** You provide and control your own API key
 
 #### OpenAI
-- **What we share:** Video transcripts and your API key
+- **What we share:** Video transcripts, your API key, and (rarely) a snapshot of YouTube's page HTML structure for layout adaptation
 - **Purpose:** AI-powered content analysis (alternative provider)
 - **Their privacy policy:** https://openai.com/privacy
 - **Your control:** You provide and control your own API key
@@ -123,6 +136,7 @@ We do not sell, trade, or otherwise transfer your information to third parties, 
 
 ### AI Providers (Required for Functionality)
 - Video transcripts are sent to your chosen AI provider (Anthropic Claude AI or OpenAI) for analysis
+- Rarely, a snapshot of YouTube's page HTML structure (no personal data) is sent to the same provider so the Extension can adapt to YouTube layout changes
 - Communication is encrypted (HTTPS)
 - Subject to the respective provider's privacy policy
 - You control this by providing your own API key and selecting your preferred provider
@@ -177,7 +191,7 @@ By installing and using SkipTube AI, you consent to this Privacy Policy.
 ## Summary (TL;DR)
 
 - ✅ All your data stored locally on your device
-- ✅ Only video transcripts sent to your chosen AI provider (Anthropic or OpenAI) for analysis (using your API key)
+- ✅ Only video transcripts (and, rarely, a YouTube page-structure snapshot for layout adaptation) sent to your chosen AI provider (Anthropic or OpenAI), using your API key
 - ✅ No tracking, no analytics, no third-party data sharing
 - ✅ You control your API key and can delete all data anytime
 - ✅ Open source - verify our claims by reviewing the code
