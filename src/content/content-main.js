@@ -40,6 +40,9 @@ class YouTubeSkipManager {
     try {
       this.logger.info('Initializing YouTube Skip Manager');
 
+      // Start listening for transcripts captured by the MAIN-world interceptor.
+      this.transcriptService.setupInterceptorBridge();
+
       // Load settings
       await this.loadSettings();
 

@@ -4,15 +4,66 @@ import { TranscriptError, TranscriptNotAvailableError, TranscriptExtractionError
 import { logger } from '../logger/index.js';
 import { TranscriptValidator } from '../validators/index.js';
 import { Transcript } from '../models/index.js';
+import { SELECTORS, INTERCEPTOR } from '../constants.js';
 
 /**
  * TranscriptService - Handles transcript extraction and processing
+ *
+ * Extraction strategy (hybrid, resilient to YouTube redesigns):
+ *   1. PRIMARY  - MAIN-world network interceptor reads YouTube's own get_transcript
+ *                 JSON response (no dependency on CSS class names). See transcript-interceptor.js.
+ *   2. FALLBACK - DOM scraping of the rendered transcript panel with resilient selectors.
+ * Opening the transcript panel is what makes the page issue its authenticated
+ * get_transcript request, so both paths start by opening the panel.
  */
 export class TranscriptService {
   constructor() {
     this.logger = logger.child('TranscriptService');
-    this.maxRetries = 10;
+    this.maxRetries = 12;
     this.retryDelay = 800;
+
+    // Latest transcript captured by the MAIN-world interceptor, keyed by videoId.
+    this._intercepted = null;
+    this._bridgeSetup = false;
+  }
+
+  /**
+   * Register the window message bridge that receives transcripts captured by the
+   * MAIN-world interceptor (transcript-interceptor.js). Idempotent.
+   */
+  setupInterceptorBridge() {
+    if (this._bridgeSetup) return;
+    this._bridgeSetup = true;
+
+    window.addEventListener('message', (event) => {
+      if (event.source !== window) return;
+      const data = event.data;
+      if (!data || data.source !== INTERCEPTOR.MESSAGE_SOURCE || data.type !== INTERCEPTOR.MESSAGE_TYPE) {
+        return;
+      }
+      const payload = data.payload;
+      if (payload && Array.isArray(payload.segments) && payload.segments.length > 0) {
+        this._intercepted = { videoId: payload.videoId, segments: payload.segments };
+        this.logger.info('Interceptor captured transcript', {
+          videoId: payload.videoId,
+          segments: payload.segments.length
+        });
+      }
+    });
+
+    this.logger.debug('Interceptor bridge ready');
+  }
+
+  /**
+   * Read an interceptor-captured transcript for the given video, if available.
+   * @param {string} videoId
+   * @returns {Array|null}
+   */
+  getInterceptedTranscript(videoId) {
+    if (this._intercepted && (!videoId || this._intercepted.videoId === videoId)) {
+      return this._intercepted.segments;
+    }
+    return null;
   }
 
   /**
@@ -25,16 +76,20 @@ export class TranscriptService {
     const stopTimer = this.logger.time(`Extract transcript for ${videoId}`);
 
     try {
-      this.logger.info(`Extracting transcript from DOM`, { videoId });
+      this.logger.info(`Extracting transcript`, { videoId });
 
-      // Try to open transcript panel
+      // Ensure we are listening for interceptor-captured transcripts.
+      this.setupInterceptorBridge();
+
+      // Opening the transcript panel makes the page issue its authenticated
+      // get_transcript request, which the MAIN-world interceptor captures.
       const opened = await this.openTranscriptPanel();
       if (!opened) {
         this.logger.warn(`Could not open transcript panel`, { videoId });
       }
 
-      // Wait for transcript to load
-      const transcriptData = await this.waitForTranscript();
+      // Wait for transcript: interceptor (primary) then DOM (fallback).
+      const transcriptData = await this.waitForTranscript(videoId);
 
       if (!transcriptData || transcriptData.length === 0) {
         throw new TranscriptNotAvailableError(videoId);
@@ -66,60 +121,107 @@ export class TranscriptService {
   }
 
   /**
+   * Expand the video description ("...more"), which since 2024 hides the
+   * "Show transcript" button until expanded.
+   * @returns {Promise<void>}
+   */
+  async expandDescription() {
+    try {
+      const expander = document.querySelector(SELECTORS.DESCRIPTION_EXPANDER);
+      if (expander && expander.offsetParent !== null) {
+        expander.click();
+        this.logger.debug('Expanded video description');
+        await this.delay(400);
+      }
+    } catch (error) {
+      this.logger.debug('Description expand skipped', { error: error.message });
+    }
+  }
+
+  /**
+   * Find the "Show transcript" button, supporting the modern description section
+   * and multiple languages (text + aria-label).
+   * @returns {HTMLElement|null}
+   */
+  findTranscriptButton() {
+    // Preferred: the dedicated transcript section button inside the description.
+    const sectionBtn = document.querySelector(SELECTORS.TRANSCRIPT_BUTTON_SECTION);
+    if (sectionBtn) return sectionBtn;
+
+    // Fallback: any button/aria-label mentioning transcript (EN + IT).
+    const candidates = Array.from(document.querySelectorAll('button, ytd-button-renderer, a'));
+    return candidates.find((el) => {
+      const text = (el.textContent || '').toLowerCase();
+      const aria = (el.getAttribute('aria-label') || '').toLowerCase();
+      return text.includes('transcript') || text.includes('trascri') ||
+             aria.includes('transcript') || aria.includes('trascri');
+    }) || null;
+  }
+
+  /**
    * Open transcript panel
    * @returns {Promise<boolean>}
    */
   async openTranscriptPanel() {
     try {
-      // Look for transcript button (multi-language support)
-      const transcriptButton = Array.from(document.querySelectorAll('button'))
-        .find(btn => {
-          const text = btn.textContent?.toLowerCase() || '';
-          return text.includes('transcript') || text.includes('trascrizione');
-        });
-
-      if (!transcriptButton) {
-        this.logger.debug(`Transcript button not found`);
-        return false;
-      }
-
-      // Check if already open
-      const panel = document.querySelector('ytd-engagement-panel-section-list-renderer[target-id*="transcript"]');
-      if (panel && panel.offsetParent !== null) {
-        this.logger.debug(`Transcript panel already open`);
+      // Already open?
+      const existing = document.querySelector(SELECTORS.TRANSCRIPT_PANEL);
+      if (existing && existing.offsetParent !== null) {
+        this.logger.debug('Transcript panel already open');
         return true;
       }
 
-      // Click button
+      // The transcript button is hidden inside the collapsed description.
+      await this.expandDescription();
+
+      let transcriptButton = this.findTranscriptButton();
+
+      // Button may render slightly after the description expands - retry briefly.
+      for (let i = 0; i < 4 && !transcriptButton; i++) {
+        await this.delay(400);
+        transcriptButton = this.findTranscriptButton();
+      }
+
+      if (!transcriptButton) {
+        this.logger.debug('Transcript button not found');
+        return false;
+      }
+
       transcriptButton.click();
-      this.logger.debug(`Clicked transcript button`);
+      this.logger.debug('Clicked transcript button');
 
-      // Wait for panel to appear
       await this.delay(500);
-
       return true;
     } catch (error) {
-      this.logger.warn(`Failed to open transcript panel`, { error: error.message });
+      this.logger.warn('Failed to open transcript panel', { error: error.message });
       return false;
     }
   }
 
   /**
-   * Wait for transcript to load in DOM
+   * Wait for a transcript to become available, preferring the interceptor
+   * (YouTube's own JSON) and falling back to DOM scraping.
+   * @param {string} videoId
    * @returns {Promise<Array>}
    */
-  async waitForTranscript() {
+  async waitForTranscript(videoId = '') {
     for (let i = 0; i < this.maxRetries; i++) {
       this.logger.debug(`Checking for transcript (attempt ${i + 1}/${this.maxRetries})`);
 
-      const transcriptData = this.extractTranscriptData();
+      // 1) PRIMARY: interceptor-captured transcript (robust, no CSS dependency).
+      const intercepted = this.getInterceptedTranscript(videoId);
+      if (intercepted && intercepted.length > 0) {
+        this.logger.info(`Transcript via interceptor (${intercepted.length} segments)`);
+        return intercepted;
+      }
 
+      // 2) FALLBACK: scrape the rendered DOM panel.
+      const transcriptData = this.extractTranscriptData();
       if (transcriptData && transcriptData.length > 0) {
-        this.logger.debug(`Transcript found with ${transcriptData.length} segments`);
+        this.logger.info(`Transcript via DOM (${transcriptData.length} segments)`);
         return transcriptData;
       }
 
-      // Wait before retry
       await this.delay(this.retryDelay);
     }
 
@@ -127,55 +229,47 @@ export class TranscriptService {
   }
 
   /**
-   * Extract transcript data from DOM
+   * Parse a YouTube timestamp string ("0:00", "1:23", "1:23:45") to seconds.
+   * @param {string} timeText
+   * @returns {number|null}
+   */
+  parseTimestamp(timeText) {
+    const parts = (timeText || '').trim().split(':').map((p) => parseInt(p, 10));
+    if (parts.some((n) => isNaN(n))) return null;
+    if (parts.length === 2) return parts[0] * 60 + parts[1];
+    if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    return null;
+  }
+
+  /**
+   * Extract transcript data by scraping the rendered DOM panel (fallback path).
+   * Uses resilient selectors with class-substring fallbacks so minor renames
+   * (e.g. ".segment-text" -> "...cue-text") still work.
    * @returns {Array|null}
    */
   extractTranscriptData() {
     try {
-      const panel = document.querySelector('ytd-engagement-panel-section-list-renderer[target-id*="transcript"]');
+      const panel = document.querySelector(SELECTORS.TRANSCRIPT_PANEL);
+      if (!panel) return null;
 
-      if (!panel) {
-        return null;
-      }
+      const segments = panel.querySelectorAll(SELECTORS.TRANSCRIPT_SEGMENTS);
+      if (!segments || segments.length === 0) return null;
 
-      const segments = panel.querySelectorAll('ytd-transcript-segment-renderer');
+      const transcriptData = Array.from(segments).map((segment) => {
+        const timeElement = segment.querySelector(SELECTORS.SEGMENT_TIMESTAMP);
+        const textElement = segment.querySelector(SELECTORS.SEGMENT_TEXT);
+        if (!timeElement || !textElement) return null;
 
-      if (!segments || segments.length === 0) {
-        return null;
-      }
+        const timeSeconds = this.parseTimestamp(timeElement.textContent);
+        const text = textElement.textContent.trim();
+        if (timeSeconds === null || !text) return null;
 
-      const transcriptData = Array.from(segments).map(segment => {
-        const timeElement = segment.querySelector('.segment-timestamp');
-        const textElement = segment.querySelector('.segment-text');
-
-        if (!timeElement || !textElement) {
-          return null;
-        }
-
-        // Parse time (format: "0:00" or "1:23:45")
-        const timeText = timeElement.textContent.trim();
-        const timeParts = timeText.split(':').map(p => parseInt(p, 10));
-
-        let timeSeconds;
-        if (timeParts.length === 2) {
-          // MM:SS
-          timeSeconds = timeParts[0] * 60 + timeParts[1];
-        } else if (timeParts.length === 3) {
-          // HH:MM:SS
-          timeSeconds = timeParts[0] * 3600 + timeParts[1] * 60 + timeParts[2];
-        } else {
-          return null;
-        }
-
-        return {
-          time: timeSeconds,
-          text: textElement.textContent.trim()
-        };
-      }).filter(item => item !== null);
+        return { time: timeSeconds, text };
+      }).filter((item) => item !== null);
 
       return transcriptData.length > 0 ? transcriptData : null;
     } catch (error) {
-      this.logger.warn(`Error extracting transcript data`, { error: error.message });
+      this.logger.warn('Error extracting transcript data', { error: error.message });
       return null;
     }
   }

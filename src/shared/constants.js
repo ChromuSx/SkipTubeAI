@@ -48,13 +48,23 @@ export const SELECTORS = {
   PROGRESS_BAR: '.ytp-progress-bar',
   CHANNEL_NAME: 'ytd-channel-name a',
   VIDEO_TITLE: 'h1.ytd-watch-metadata yt-formatted-string',
-  TRANSCRIPT_PANEL: [
-    'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"]',
-    'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-transcript"]'
-  ].join(','),
+  // Description expander ("...more") that reveals the "Show transcript" button.
+  // YouTube moved the transcript button inside the (collapsed) description in 2024-2026.
+  DESCRIPTION_EXPANDER: '#expand, tp-yt-paper-button#expand, ytd-text-inline-expander #expand',
+  // "Show transcript" button lives in the description's transcript section.
+  TRANSCRIPT_BUTTON_SECTION: 'ytd-video-description-transcript-section-renderer button, ytd-video-description-transcript-section-renderer ytd-button-renderer button',
+  // Engagement panel. target-id substring "transcript" matches all known variants:
+  // PAmodern_transcript_view (2026 "modern" panel), engagement-panel-searchable-transcript, engagement-panel-transcript.
+  TRANSCRIPT_PANEL: 'ytd-engagement-panel-section-list-renderer[target-id*="transcript"]',
   TRANSCRIPT_SEGMENTS: 'ytd-transcript-segment-renderer',
   SEGMENT_TIMESTAMP: '.segment-timestamp, [class*="timestamp"]',
   SEGMENT_TEXT: '.segment-text, [class*="segment-text"], [class*="cue-text"]'
+};
+
+// MAIN-world transcript interceptor message contract (see src/content/transcript-interceptor.js)
+export const INTERCEPTOR = {
+  MESSAGE_SOURCE: 'YSS_INTERCEPTOR',
+  MESSAGE_TYPE: 'YSS_TRANSCRIPT'
 };
 
 // Message actions for chrome.runtime messaging

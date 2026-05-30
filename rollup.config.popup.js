@@ -37,6 +37,8 @@ export default {
         { src: 'src/help/help.js', dest: 'dist' },
         { src: 'src/welcome.html', dest: 'dist' },
         { src: 'src/welcome.js', dest: 'dist' },
+        // MAIN-world transcript interceptor (no imports, copied verbatim)
+        { src: 'src/content/transcript-interceptor.js', dest: 'dist' },
         // Manifest and assets
         { src: 'src/manifest.json', dest: 'dist' },
         { src: 'src/icons', dest: 'dist' },
