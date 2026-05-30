@@ -8,8 +8,8 @@ export const CONFIG = {
       VERSION: '2023-06-01',
       TIMEOUT: 60000,
       MODELS: {
-        HAIKU: 'claude-3-5-haiku-20241022',
-        SONNET: 'claude-sonnet-4-5-20250929'
+        HAIKU: 'claude-haiku-4-5-20251001',
+        SONNET: 'claude-sonnet-4-6'
       }
     },
     OPENAI: {
@@ -17,9 +17,9 @@ export const CONFIG = {
       ENDPOINT: 'https://api.openai.com/v1/chat/completions',
       TIMEOUT: 60000,
       MODELS: {
-        GPT_4O: 'gpt-4o',
-        GPT_4O_MINI: 'gpt-4o-mini',
-        GPT_4_TURBO: 'gpt-4-turbo'
+        GPT_5_5: 'gpt-5.5',
+        GPT_5_4_MINI: 'gpt-5.4-mini',
+        GPT_5_4_NANO: 'gpt-5.4-nano'
       }
     }
   },
@@ -30,8 +30,8 @@ export const CONFIG = {
     VERSION: '2023-06-01',
     TIMEOUT: 30000,
     MODELS: {
-      HAIKU: 'claude-3-5-haiku-20241022',
-      SONNET: 'claude-sonnet-4-5-20250929'
+      HAIKU: 'claude-haiku-4-5-20251001',
+      SONNET: 'claude-sonnet-4-6'
     },
     MAX_TOKENS: 1000
   },

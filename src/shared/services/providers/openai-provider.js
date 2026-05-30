@@ -26,9 +26,9 @@ export class OpenAIProvider extends AIProvider {
    */
   getAvailableModels() {
     return {
-      'gpt-4o': 'gpt-4o',
-      'gpt-4o-mini': 'gpt-4o-mini',
-      'gpt-4-turbo': 'gpt-4-turbo'
+      'gpt-5.5': 'gpt-5.5',
+      'gpt-5.4-mini': 'gpt-5.4-mini',
+      'gpt-5.4-nano': 'gpt-5.4-nano'
     };
   }
 
@@ -64,7 +64,7 @@ export class OpenAIProvider extends AIProvider {
    */
   createPayload(systemPrompt, userMessage, model) {
     const models = this.getAvailableModels();
-    const modelId = models[model] || models['gpt-4o-mini'];
+    const modelId = models[model] || models['gpt-5.4-mini'];
 
     return {
       model: modelId,
@@ -169,7 +169,7 @@ export class OpenAIProvider extends AIProvider {
    */
   createTestPayload() {
     return {
-      model: 'gpt-4o-mini',
+      model: 'gpt-5.4-mini',
       messages: [
         {
           role: 'user',

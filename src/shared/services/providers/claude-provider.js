@@ -27,8 +27,8 @@ export class ClaudeProvider extends AIProvider {
    */
   getAvailableModels() {
     return {
-      'haiku': 'claude-3-5-haiku-20241022',
-      'sonnet': 'claude-sonnet-4-5-20250929'
+      'haiku': 'claude-haiku-4-5-20251001',
+      'sonnet': 'claude-sonnet-4-6'
     };
   }
 
@@ -165,7 +165,7 @@ export class ClaudeProvider extends AIProvider {
    */
   createTestPayload() {
     return {
-      model: 'claude-3-5-haiku-20241022',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 10,
       messages: [
         {

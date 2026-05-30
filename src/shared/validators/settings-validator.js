@@ -183,7 +183,7 @@ export class SettingsValidator {
     }
 
     const validModels = provider === 'openai'
-      ? ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo']
+      ? ['gpt-5.5', 'gpt-5.4-mini', 'gpt-5.4-nano']
       : ['haiku', 'sonnet'];
 
     if (!validModels.includes(value)) {
@@ -286,7 +286,7 @@ export class SettingsValidator {
 
     // Determine valid models based on provider
     const validModels = aiProvider === 'openai'
-      ? ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo']
+      ? ['gpt-5.5', 'gpt-5.4-mini', 'gpt-5.4-nano']
       : ['haiku', 'sonnet'];
 
     return {
@@ -298,7 +298,7 @@ export class SettingsValidator {
 
       aiModel: validModels.includes(advancedSettings.aiModel)
         ? advancedSettings.aiModel
-        : (aiProvider === 'openai' ? 'gpt-4o-mini' : 'haiku'),
+        : (aiProvider === 'openai' ? 'gpt-5.4-mini' : 'haiku'),
 
       skipBuffer: typeof advancedSettings.skipBuffer === 'number'
         ? Math.max(0, Math.min(10, advancedSettings.skipBuffer))

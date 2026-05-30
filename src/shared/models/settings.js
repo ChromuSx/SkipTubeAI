@@ -271,9 +271,9 @@ export class AdvancedSettings {
       return this.aiModel === 'haiku' ? 'Claude Haiku (Fast)' : 'Claude Sonnet (Accurate)';
     } else if (this.aiProvider === 'openai') {
       const modelNames = {
-        'gpt-4o': 'GPT-4o (Best)',
-        'gpt-4o-mini': 'GPT-4o Mini (Fast)',
-        'gpt-4-turbo': 'GPT-4 Turbo (Balanced)'
+        'gpt-5.5': 'GPT-5.5 (Best)',
+        'gpt-5.4-mini': 'GPT-5.4 Mini (Fast)',
+        'gpt-5.4-nano': 'GPT-5.4 Nano (Cheapest)'
       };
       return modelNames[this.aiModel] || this.aiModel;
     }
