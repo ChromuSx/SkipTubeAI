@@ -40,6 +40,31 @@ export class TranscriptService {
     this.selectors = { ...this._defaultSelectors };
     this.healedSelectors = null;
     this._healedLoaded = false;
+
+    // Optional UI notifier injected by the content script: (message, type) => void
+    this.notifier = null;
+  }
+
+  /**
+   * Register a UI notifier so the service can surface user-facing messages
+   * (e.g. when self-heal kicks in). Safe no-op if never set.
+   * @param {(message: string, type: string) => void} fn
+   */
+  setNotifier(fn) {
+    if (typeof fn === 'function') this.notifier = fn;
+  }
+
+  /**
+   * Emit a user-facing notification if a notifier is registered.
+   * @param {string} message
+   * @param {string} type - info | success | warning | error
+   */
+  notify(message, type = 'info') {
+    try {
+      if (this.notifier) this.notifier(message, type);
+    } catch (error) {
+      this.logger.debug('Notifier threw', { error: error.message });
+    }
   }
 
   /** Map from AI heal-result keys to internal selector keys. */
@@ -170,6 +195,8 @@ export class TranscriptService {
         return false;
       }
 
+      this.notify('🔧 YouTube layout changed — adapting automatically with AI…', 'info');
+
       const response = await chrome.runtime.sendMessage({
         action: 'healSelectors',
         data: { snapshot, url: location.href }
@@ -189,6 +216,7 @@ export class TranscriptService {
 
       await this.persistHealedSelectors();
       this.logger.info('Self-heal applied new selectors', { keys });
+      this.notify('✅ Adapted to YouTube\'s new layout', 'success');
       return true;
     } catch (error) {
       this.logger.error('Self-heal failed', { error: error.message });

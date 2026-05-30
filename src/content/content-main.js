@@ -43,6 +43,9 @@ class YouTubeSkipManager {
       // Start listening for transcripts captured by the MAIN-world interceptor.
       this.transcriptService.setupInterceptorBridge();
 
+      // Let the transcript service surface user-facing messages (e.g. self-heal).
+      this.transcriptService.setNotifier((message, type) => this.showNotification(message, type));
+
       // Load settings
       await this.loadSettings();
 
