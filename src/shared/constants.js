@@ -56,9 +56,13 @@ export const SELECTORS = {
   // Engagement panel. target-id substring "transcript" matches all known variants:
   // PAmodern_transcript_view (2026 "modern" panel), engagement-panel-searchable-transcript, engagement-panel-transcript.
   TRANSCRIPT_PANEL: 'ytd-engagement-panel-section-list-renderer[target-id*="transcript"]',
-  TRANSCRIPT_SEGMENTS: 'ytd-transcript-segment-renderer',
-  SEGMENT_TIMESTAMP: '.segment-timestamp, [class*="timestamp"]',
-  SEGMENT_TEXT: '.segment-text, [class*="segment-text"], [class*="cue-text"]'
+  // Two coexisting transcript UIs (YouTube is migrating gradually):
+  //   - legacy Polymer: ytd-transcript-segment-renderer  (.segment-timestamp / .segment-text)
+  //   - modern view-model: transcript-segment-view-model  (.ytwTranscriptSegmentViewModelTimestamp / .ytAttributedStringHost)
+  // The class sets are disjoint, so combining them is safe (only one matches per segment).
+  TRANSCRIPT_SEGMENTS: 'ytd-transcript-segment-renderer, transcript-segment-view-model',
+  SEGMENT_TIMESTAMP: '.segment-timestamp, .ytwTranscriptSegmentViewModelTimestamp, [class*="timestamp"]',
+  SEGMENT_TEXT: '.segment-text, [class*="segment-text"], [class*="cue-text"], .ytAttributedStringHost'
 };
 
 // MAIN-world transcript interceptor message contract (see src/content/transcript-interceptor.js)
