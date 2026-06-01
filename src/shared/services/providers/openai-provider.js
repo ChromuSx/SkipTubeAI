@@ -78,8 +78,9 @@ export class OpenAIProvider extends AIProvider {
           content: userMessage
         }
       ],
-      temperature: 0.3,
-      max_tokens: 4096,
+      // GPT-5.x: legacy `max_tokens` is rejected ("Use 'max_completion_tokens'
+      // instead") and only the default temperature is allowed, so we omit it.
+      max_completion_tokens: 4096,
       response_format: { type: "json_object" }
     };
   }
@@ -176,7 +177,7 @@ export class OpenAIProvider extends AIProvider {
           content: 'Hello'
         }
       ],
-      max_tokens: 10
+      max_completion_tokens: 10
     };
   }
 }
