@@ -203,4 +203,4 @@ Note: This extension is independent and not affiliated with YouTube, Google, Ant
 
 Developer: Giovanni Guarino
 License: MIT (Open Source)
-Version: 1.3.1
+Version: 1.3.2
