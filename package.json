@@ -1,6 +1,6 @@
 {
   "name": "skiptube-ai",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "description": "AI-powered YouTube content skipper",
   "type": "module",
   "private": true,
