@@ -15,7 +15,11 @@
     "dev": "npm run build -- --watch",
     "type-check": "tsc --noEmit",
     "generate-icons": "node generate-icons.js",
-    "optimize-screenshots": "node optimize-screenshots.js"
+    "optimize-screenshots": "node optimize-screenshots.js",
+    "promo:video:install": "npm --prefix marketplace/chrome-web-store/video install",
+    "promo:video:studio": "npm --prefix marketplace/chrome-web-store/video run studio",
+    "promo:video:render": "npm --prefix marketplace/chrome-web-store/video run render",
+    "promo:video:thumbnail": "npm --prefix marketplace/chrome-web-store/video run thumbnail"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^25.0.7",

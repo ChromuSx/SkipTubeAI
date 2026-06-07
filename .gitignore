@@ -4,6 +4,7 @@ CLAUDE.md
 # Dependencies
 node_modules/
 package-lock.json
+!marketplace/chrome-web-store/video/package-lock.json
 yarn.lock
 
 # Build output (all generated files go to dist/)
@@ -41,8 +42,11 @@ yarn-error.log*
 *.pem
 *.zip
 
-# Temporary files for screenshots (final screenshots are committed)
+# Temporary files for marketplace screenshots (final assets are committed)
 # Add specific temporary files here if needed
+marketplace/chrome-web-store/video/out/
+marketplace/chrome-web-store/video/public/audio/
+marketplace/chrome-web-store/promotional-video/qa-frame-*.png
 
 # Temporary files
 tmp/

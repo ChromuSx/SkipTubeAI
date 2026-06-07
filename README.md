@@ -8,7 +8,7 @@
 
 [![Version](https://img.shields.io/badge/version-1.3.4-blue?style=for-the-badge)](https://github.com/ChromuSx/SkipTubeAI/releases)
 [![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)](LICENSE)
-[![Chrome Web Store](https://img.shields.io/badge/Chrome-Web%20Store-orange?style=for-the-badge)](https://chrome.google.com/webstore)
+[![Chrome Web Store](https://img.shields.io/badge/Chrome-Web%20Store-orange?style=for-the-badge)](https://chromewebstore.google.com/detail/skiptube-ai/jinbffngeajdaalfakephodepnmpocbi)
 [![GitHub Stars](https://img.shields.io/github/stars/ChromuSx/SkipTubeAI?style=for-the-badge)](https://github.com/ChromuSx/SkipTubeAI)
 
 <p align="center">
@@ -18,8 +18,20 @@
   <a href="https://www.paypal.com/paypalme/giovanniguarino1999"><img src="https://img.shields.io/badge/Donate-PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white" alt="PayPal"></a>
 </p>
 
-[Install from Chrome Web Store](#installation) • [Documentation](#documentation) • [Support](#support)
+[Install from Chrome Web Store](https://chromewebstore.google.com/detail/skiptube-ai/jinbffngeajdaalfakephodepnmpocbi) • [Video](#-see-it-in-action) • [Screenshots](#-screenshots) • [Support](#-support)
 
+</div>
+
+---
+
+## 🎬 See It in Action
+
+<div align="center">
+  <a href="marketplace/chrome-web-store/promotional-video/skiptube-ai-promo.mp4">
+    <img src="marketplace/chrome-web-store/promotional-video/skiptube-ai-promo-thumbnail.png" alt="SkipTube AI promotional video thumbnail" width="840">
+  </a>
+  <br>
+  <sub>Click the preview to open the promotional video. Not rendering in GitHub? <a href="marketplace/chrome-web-store/promotional-video/skiptube-ai-promo.mp4">Download the MP4</a>.</sub>
 </div>
 
 ---
@@ -39,12 +51,28 @@
 
 ---
 
+## 📸 Screenshots
+
+| Popup settings | Advanced configuration |
+|---|---|
+| <img src="marketplace/chrome-web-store/screenshots/1-extension-settings.png" alt="SkipTube AI popup settings" width="400"> | <img src="marketplace/chrome-web-store/screenshots/2-advanced-configuration.png" alt="SkipTube AI advanced configuration" width="400"> |
+
+| Statistics | Channel exclusions |
+|---|---|
+| <img src="marketplace/chrome-web-store/screenshots/3-statistics-dashboard.png" alt="SkipTube AI statistics dashboard" width="400"> | <img src="marketplace/chrome-web-store/screenshots/5-whitelist-manager.png" alt="SkipTube AI channel exclusion manager" width="400"> |
+
+<p align="center">
+  <img src="marketplace/chrome-web-store/screenshots/4-cache-viewer.png" alt="SkipTube AI analyzed video cache viewer" width="840">
+</p>
+
+---
+
 ## 📦 Installation
 
 ### For Users
 
 1. **Install from Chrome Web Store** (Recommended)
-   - Visit the [Chrome Web Store page](#) (coming soon)
+   - Visit the [SkipTube AI Chrome Web Store page](https://chromewebstore.google.com/detail/skiptube-ai/jinbffngeajdaalfakephodepnmpocbi)
    - Click "Add to Chrome"
    - Follow the installation prompts
 
@@ -283,10 +311,34 @@ SkipTubeAI/
 │
 ├── rollup.config.*.js                  # Build configurations
 ├── package.json                        # Dependencies and scripts
-├── Screenshots/                        # Screenshots for Web Store
+├── marketplace/                        # Chrome Web Store listing text and assets
+│   └── chrome-web-store/
+│       ├── screenshots/                # Store screenshots
+│       ├── promotional-images/         # Store promo tiles
+│       ├── promotional-video/          # MP4, thumbnail, YouTube metadata
+│       └── video/                      # Remotion source for the promo video
 ├── PRIVACY.md                          # Privacy policy
 ├── CLAUDE.md                           # Claude Code instructions
 └── README.md                           # This file
+```
+
+### 🛒 Chrome Web Store Assets
+
+All store-ready assets live in [`marketplace/chrome-web-store/`](marketplace/chrome-web-store/):
+
+- [`listing-description.md`](marketplace/chrome-web-store/listing-description.md) - detailed Chrome Web Store description
+- [`listing-fields.md`](marketplace/chrome-web-store/listing-fields.md) - name, summary, category, support URL, homepage URL, and privacy URL
+- [`privacy-dashboard.md`](marketplace/chrome-web-store/privacy-dashboard.md) - single purpose and permission justifications
+- [`screenshots/`](marketplace/chrome-web-store/screenshots/) - final store screenshots
+- [`promotional-images/`](marketplace/chrome-web-store/promotional-images/) - small and featured promotional tiles
+- [`promotional-video/`](marketplace/chrome-web-store/promotional-video/) - rendered MP4, YouTube thumbnail, and upload metadata
+- [`video/`](marketplace/chrome-web-store/video/) - Remotion source used to render the promotional video
+
+Render the promo video locally with:
+
+```bash
+npm run promo:video:render
+npm run promo:video:thumbnail
 ```
 
 ### 💡 Development Workflow
@@ -541,7 +593,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🔗 Links
 
-- [Chrome Web Store](#) (coming soon)
+- [Chrome Web Store](https://chromewebstore.google.com/detail/skiptube-ai/jinbffngeajdaalfakephodepnmpocbi)
 - [Privacy Policy](PRIVACY.md)
 - [GitHub Repository](https://github.com/ChromuSx/SkipTubeAI)
 - [Anthropic Console](https://console.anthropic.com)

@@ -1,0 +1,22 @@
+{
+  "name": "skiptube-ai-store-video",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Chrome Web Store promotional video for SkipTube AI",
+  "scripts": {
+    "audio": "node scripts/generate-audio.mjs",
+    "studio": "remotion studio",
+    "render": "npm run audio && remotion render SkipTubePromo ../promotional-video/skiptube-ai-promo.mp4 --crf=22",
+    "thumbnail": "remotion still SkipTubePromoThumbnail ../promotional-video/skiptube-ai-promo-thumbnail.png"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.1",
+    "typescript": "^5.4.5"
+  }
+}
