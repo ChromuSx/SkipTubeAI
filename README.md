@@ -6,15 +6,17 @@
 
 **AI-powered Chrome extension that automatically detects and skips sponsorships, intros, outros, and promotional content in YouTube videos using Claude AI or OpenAI.**
 
-[![Version](https://img.shields.io/badge/version-1.3.4-blue.svg)](https://github.com/ChromuSx/SkipTubeAI/releases)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Chrome Web Store](https://img.shields.io/badge/Chrome-Web%20Store-orange.svg)](https://chrome.google.com/webstore)
-[![GitHub Stars](https://img.shields.io/github/stars/ChromuSx/SkipTubeAI?style=social)](https://github.com/ChromuSx/SkipTubeAI)
+[![Version](https://img.shields.io/badge/version-1.3.4-blue?style=for-the-badge)](https://github.com/ChromuSx/SkipTubeAI/releases)
+[![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)](LICENSE)
+[![Chrome Web Store](https://img.shields.io/badge/Chrome-Web%20Store-orange?style=for-the-badge)](https://chrome.google.com/webstore)
+[![GitHub Stars](https://img.shields.io/github/stars/ChromuSx/SkipTubeAI?style=for-the-badge)](https://github.com/ChromuSx/SkipTubeAI)
 
-<a href="https://github.com/sponsors/ChromuSx"><img src="https://img.shields.io/badge/Sponsor-GitHub-EA4AAA?style=for-the-badge&logo=github-sponsors&logoColor=white" alt="GitHub Sponsors"></a>
-<a href="https://ko-fi.com/chromus"><img src="https://img.shields.io/badge/Support-Ko--fi-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white" alt="Ko-fi"></a>
-<a href="https://buymeacoffee.com/chromus"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me a Coffee"></a>
-<a href="https://www.paypal.com/paypalme/giovanniguarino1999"><img src="https://img.shields.io/badge/Donate-PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white" alt="PayPal"></a>
+<p align="center">
+  <a href="https://github.com/sponsors/ChromuSx"><img src="https://img.shields.io/badge/Sponsor-GitHub-EA4AAA?style=for-the-badge&logo=github-sponsors&logoColor=white" alt="GitHub Sponsors"></a>
+  <a href="https://ko-fi.com/chromus"><img src="https://img.shields.io/badge/Support-Ko--fi-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white" alt="Ko-fi"></a>
+  <a href="https://buymeacoffee.com/chromus"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me a Coffee"></a>
+  <a href="https://www.paypal.com/paypalme/giovanniguarino1999"><img src="https://img.shields.io/badge/Donate-PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white" alt="PayPal"></a>
+</p>
 
 [Install from Chrome Web Store](#installation) • [Documentation](#documentation) • [Support](#support)
 
@@ -548,8 +550,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 <div align="center">
 
-**Made with ❤️ by Giovanni Guarino**
-
 If you find this extension helpful, consider ⭐ starring the repository!
 
+</div>
+
+<div align="center">
+  <sub>Made with ❤️ by <a href="https://github.com/ChromuSx">Giovanni Guarino</a></sub>
 </div>
