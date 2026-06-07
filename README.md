@@ -26,13 +26,9 @@
 
 ## 🎬 See It in Action
 
-<div align="center">
-  <a href="marketplace/chrome-web-store/promotional-video/skiptube-ai-promo.mp4">
-    <img src="marketplace/chrome-web-store/promotional-video/skiptube-ai-promo-thumbnail.png" alt="SkipTube AI promotional video thumbnail" width="840">
-  </a>
-  <br>
-  <sub>Click the preview to open the promotional video. Not rendering in GitHub? <a href="marketplace/chrome-web-store/promotional-video/skiptube-ai-promo.mp4">Download the MP4</a>.</sub>
-</div>
+https://github.com/user-attachments/assets/7eb49fa9-1abe-4846-af36-3d6de10aa899
+
+<sub>▶ Press play for sound. Not rendering in GitHub? <a href="marketplace/chrome-web-store/promotional-video/skiptube-ai-promo.mp4">Download the MP4</a>.</sub>
 
 ---
 
